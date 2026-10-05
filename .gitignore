@@ -20,6 +20,8 @@ IMPLEMENTATION_ROADMAP.md
 # Next.js build output
 /.next/
 /out/
+/.open-next/
+/.vercel/
 
 # Production build
 /build
