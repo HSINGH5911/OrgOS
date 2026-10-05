@@ -141,7 +141,7 @@ export default function Home() {
       <footer className="border-t border-slate-800/60 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4 z-10">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-indigo-400" />
-          <span>Built for college leaders • Hindu Yuva & campus orgs</span>
+          <span>Built for college leaders</span>
         </div>
         <div>
           <span>Local development: </span>
