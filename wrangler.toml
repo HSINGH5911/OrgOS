@@ -9,3 +9,11 @@ command = "npm run build:worker"
 [assets]
 directory = ".open-next/assets"
 binding = "ASSETS"
+
+[vars]
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_K4DFj5era5PYY4vA2YuQeQ_VMrtwf5O"
+NEXT_PUBLIC_SUPABASE_URL = "https://eegzydvfclgepkbulace.supabase.co"
+
+[previews.vars]
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_K4DFj5era5PYY4vA2YuQeQ_VMrtwf5O"
+NEXT_PUBLIC_SUPABASE_URL = "https://eegzydvfclgepkbulace.supabase.co"
