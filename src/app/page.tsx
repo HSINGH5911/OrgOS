@@ -15,6 +15,7 @@ import {
   Search,
   MessageSquareText,
 } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
   const [supabaseStatus, setSupabaseStatus] = useState<"checking" | "connected" | "error">("checking");
@@ -62,35 +63,28 @@ export default function Home() {
             </div>
           </div>
 
-          {/* System Status Indicators */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-medium">
-              <Database className="w-3.5 h-3.5 text-slate-400" />
-              {supabaseStatus === "checking" && (
-                <span className="text-amber-400 flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse" />
-                  Connecting DB...
-                </span>
-              )}
-              {supabaseStatus === "connected" && (
-                <span className="text-emerald-400 flex items-center gap-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                  Supabase Live
-                </span>
-              )}
-              {supabaseStatus === "error" && (
-                <span className="text-rose-400 flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  DB Error
-                </span>
-              )}
-            </div>
+        
+        <div className="flex items-center gap-4">
+          {/* Login button */}
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-900 
+            border border-slate-800 rounded-lg hover:bg-slate-800 hover:text-white hover:border-slate-700 transition-colors shadow-sm"
+            >
+              Log In
+            </Link>
 
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-xs font-medium text-blue-400">
-              <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
-              Cloudflare Edge
-            </div>
-          </div>
+            {/* Sign Up button*/}
+            <Link
+            href="/signup"
+            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-900 
+            border border-slate-800 rounded-lg hover:bg-slate-800 hover:text-white hover:border-slate-700 transition-colors shadow-sm"
+            >
+              Sign Up
+            </Link>
+        </div>
+
+
         </div>
       </header>
 
