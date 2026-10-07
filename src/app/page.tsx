@@ -16,6 +16,7 @@ import {
   MessageSquareText,
 } from "lucide-react";
 import Link from "next/link";
+import UserDropdown from "@/components/UserDropdown";
 
 export default function Home() {
   const [supabaseStatus, setSupabaseStatus] = useState<"checking" | "connected" | "error">("checking");
@@ -63,26 +64,7 @@ export default function Home() {
             </div>
           </div>
 
-        
-        <div className="flex items-center gap-4">
-          {/* Login button */}
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-900 
-            border border-slate-800 rounded-lg hover:bg-slate-800 hover:text-white hover:border-slate-700 transition-colors shadow-sm"
-            >
-              Log In
-            </Link>
-
-            {/* Sign Up button*/}
-            <Link
-            href="/signup"
-            className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-900 
-            border border-slate-800 rounded-lg hover:bg-slate-800 hover:text-white hover:border-slate-700 transition-colors shadow-sm"
-            >
-              Sign Up
-            </Link>
-        </div>
+          <UserDropdown />
 
 
         </div>
