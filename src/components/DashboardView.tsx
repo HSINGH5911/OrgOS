@@ -305,10 +305,20 @@ export default function DashboardView({ user }: DashboardViewProps) {
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 flex flex-col gap-2">
+            <Link
+              href="/members"
+              className="orgos-btn orgos-btn--secondary w-full text-xs flex items-center justify-between"
+            >
+              <span className="flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-[#1B365D]" />
+                Chapter Roster & Members
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </Link>
             <Link
               href="/account"
-              className="orgos-btn orgos-btn--secondary w-full text-xs"
+              className="orgos-btn orgos-btn--secondary w-full text-xs text-slate-600"
             >
               <span>Manage Account & Settings</span>
             </Link>

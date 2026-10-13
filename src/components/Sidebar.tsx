@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export interface SidebarItem {
   label: string;
-  icon: string;
+  icon?: string;
   href: string;
 }
 
@@ -12,13 +14,17 @@ export interface SidebarProps {
   items: SidebarItem[];
   isCollapsed?: boolean;
   onToggle?: () => void;
+  activeHref?: string;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
   items,
   isCollapsed = false,
   onToggle,
+  activeHref,
 }) => {
+  const pathname = usePathname();
+
   return (
     <aside
       className={`fixed top-0 left-0 h-screen bg-white text-slate-800 transition-all duration-300 ease-in-out z-40 flex flex-col border-r border-slate-200 shadow-sm ${
@@ -51,29 +57,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Navigation Menu */}
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        {items.map((item, index) => (
-          <a
-            key={index}
-            href={item.href}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-sm transition-colors text-xs font-medium group relative ${
-              index === 0
-                ? "bg-[#1B365D] text-white font-semibold shadow-xs"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-          >
-            <span className="text-base min-w-[20px] text-center">{item.icon}</span>
-            {!isCollapsed && (
-              <span className="whitespace-nowrap truncate">{item.label}</span>
-            )}
+        {items.map((item, index) => {
+          const isActive = activeHref
+            ? item.href === activeHref
+            : item.href === "/"
+            ? pathname === "/"
+            : pathname.startsWith(item.href);
 
-            {/* Hover Tooltip when collapsed */}
-            {isCollapsed && (
-              <div className="absolute left-full rounded-sm px-2.5 py-1 ml-2 bg-slate-900 text-xs font-medium text-white invisible opacity-0 -translate-x-2 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 z-50 whitespace-nowrap shadow-md">
-                {item.label}
-              </div>
-            )}
-          </a>
-        ))}
+          return (
+            <Link
+              key={index}
+              href={item.href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-sm transition-colors text-xs font-medium group relative ${
+                isActive
+                  ? "bg-[#1B365D] text-white font-semibold shadow-xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+            >
+              {item.icon && (
+                <span className="text-base min-w-[20px] text-center">{item.icon}</span>
+              )}
+              {!isCollapsed && (
+                <span className="whitespace-nowrap truncate">{item.label}</span>
+              )}
+
+              {/* Hover Tooltip when collapsed */}
+              {isCollapsed && (
+                <div className="absolute left-full rounded-sm px-2.5 py-1 ml-2 bg-slate-900 text-xs font-medium text-white invisible opacity-0 -translate-x-2 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 z-50 whitespace-nowrap shadow-md">
+                  {item.label}
+                </div>
+              )}
+            </Link>
+          );
+        })}
       </nav>
     </aside>
   );

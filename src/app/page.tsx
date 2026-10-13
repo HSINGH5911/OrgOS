@@ -23,10 +23,11 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const navigationItems = [
   { label: "Overview", icon: "📊", href: "/" },
-  { label: "Documents", icon: "📁", href: "#documents" },
-  { label: "Events", icon: "📅", href: "#events" },
-  { label: "AI Copilot", icon: "✨", href: "#copilot" },
-  { label: "Transitions", icon: "📋", href: "#transitions" },
+  { label: "Documents", icon: "📁", href: "/documents" },
+  { label: "Members", icon: "👥", href: "/members" },
+  { label: "Events", icon: "📅", href: "/events" },
+  { label: "AI Copilot", icon: "✨", href: "/copilot" },
+  { label: "Transitions", icon: "📋", href: "/transitions" },
   { label: "Account", icon: "⚙️", href: "/account" },
 ];
 
