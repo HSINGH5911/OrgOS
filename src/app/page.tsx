@@ -25,6 +25,7 @@ const navigationItems = [
   { label: "Overview", icon: "📊", href: "/" },
   { label: "Documents", icon: "📁", href: "/documents" },
   { label: "Members", icon: "👥", href: "/members" },
+  { label: "Roles", icon: "🛡️", href: "/roles" },
   { label: "Events", icon: "📅", href: "/events" },
   { label: "AI Copilot", icon: "✨", href: "/copilot" },
   { label: "Transitions", icon: "📋", href: "/transitions" },

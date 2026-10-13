@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 
 export interface SidebarItem {
   label: string;
-  icon?: string;
   href: string;
 }
 
@@ -74,9 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
-              {item.icon && (
-                <span className="text-base min-w-[20px] text-center">{item.icon}</span>
-              )}
+              
               {!isCollapsed && (
                 <span className="whitespace-nowrap truncate">{item.label}</span>
               )}

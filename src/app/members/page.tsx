@@ -30,6 +30,12 @@ import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/Sidebar";
 import UserDropdown from "@/components/UserDropdown";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import {
+  getRolesForOrg,
+  resolveMemberRole,
+  RoleDefinition,
+  BUILTIN_ROLES,
+} from "@/lib/roles";
 
 interface Profile {
   id: string;
@@ -60,6 +66,7 @@ const navigationItems = [
   { label: "Overview", icon: "📊", href: "/" },
   { label: "Documents", icon: "📁", href: "/documents" },
   { label: "Members", icon: "👥", href: "/members" },
+  { label: "Roles", icon: "🛡️", href: "/roles" },
   { label: "Events", icon: "📅", href: "/events" },
   { label: "AI Copilot", icon: "✨", href: "/copilot" },
   { label: "Transitions", icon: "📋", href: "/transitions" },
@@ -76,6 +83,7 @@ export default function MembersPage() {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string>("member");
   const [members, setMembers] = useState<MemberRecord[]>([]);
+  const [availableRoles, setAvailableRoles] = useState<RoleDefinition[]>(BUILTIN_ROLES);
   const [isDataLoading, setIsDataLoading] = useState(true);
 
   // Search & Filter State
@@ -94,6 +102,7 @@ export default function MembersPage() {
   const [inviteCopied, setInviteCopied] = useState(false);
 
   const [editingMember, setEditingMember] = useState<MemberRecord | null>(null);
+  const [editRoleSelection, setEditRoleSelection] = useState<string>("member");
   const [editRole, setEditRole] = useState<MemberRecord["role"]>("member");
   const [editTitle, setEditTitle] = useState("");
   const [editIsActive, setEditIsActive] = useState(true);
@@ -159,6 +168,7 @@ export default function MembersPage() {
       }
 
       if (activeOrg) {
+        setAvailableRoles(getRolesForOrg(activeOrg.id));
         // Fetch all members belonging to this organization
         const { data: roster, error: rosterError } = await supabase
           .from("org_memberships")
@@ -206,6 +216,7 @@ export default function MembersPage() {
         };
         setOrganization(fallbackOrg);
         setCurrentUserRole(meta.role || "president");
+        setAvailableRoles(getRolesForOrg(fallbackOrg.id));
         buildFallbackRoster(activeUser, fallbackOrg);
       }
     } catch (err) {
@@ -261,7 +272,18 @@ export default function MembersPage() {
       const query = searchQuery.toLowerCase().trim();
 
       const matchesSearch = !query || name.includes(query) || email.includes(query) || title.includes(query);
-      const matchesRole = roleFilter === "all" || member.role === roleFilter;
+
+      let matchesRole = true;
+      if (roleFilter !== "all") {
+        if (roleFilter.startsWith("custom:")) {
+          const customId = roleFilter.replace("custom:", "");
+          const resolved = resolveMemberRole(member, organization?.id);
+          matchesRole = resolved.id === customId;
+        } else {
+          matchesRole = member.role === roleFilter;
+        }
+      }
+
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active" && member.is_active) ||
@@ -269,7 +291,7 @@ export default function MembersPage() {
 
       return matchesSearch && matchesRole && matchesStatus;
     });
-  }, [members, searchQuery, roleFilter, statusFilter]);
+  }, [members, searchQuery, roleFilter, statusFilter, organization?.id]);
 
   // Roster Statistics
   const stats = useMemo(() => {
@@ -329,10 +351,37 @@ export default function MembersPage() {
 
   // Open edit modal
   const handleOpenEdit = (member: MemberRecord) => {
+    // Refresh available roles in case custom roles were added
+    const currentRoles = getRolesForOrg(organization?.id);
+    setAvailableRoles(currentRoles);
+
     setEditingMember(member);
-    setEditRole(member.role);
-    setEditTitle(member.title || "");
+    const resolved = resolveMemberRole(member, organization?.id);
+    if (resolved.isCustom) {
+      setEditRoleSelection(`custom:${resolved.id}`);
+      setEditRole(resolved.baseTier);
+      setEditTitle(member.title || resolved.name);
+    } else {
+      setEditRoleSelection(member.role);
+      setEditRole(member.role);
+      setEditTitle(member.title || "");
+    }
     setEditIsActive(member.is_active);
+  };
+
+  // Change role selection in edit modal
+  const handleRoleSelectionChange = (newSelection: string) => {
+    setEditRoleSelection(newSelection);
+    if (newSelection.startsWith("custom:")) {
+      const customId = newSelection.replace("custom:", "");
+      const customRole = availableRoles.find((r) => r.id === customId);
+      if (customRole) {
+        setEditRole(customRole.baseTier);
+        setEditTitle(customRole.name);
+      }
+    } else {
+      setEditRole(newSelection as MemberRecord["role"]);
+    }
   };
 
   // Submit edit member
@@ -343,11 +392,26 @@ export default function MembersPage() {
     setIsSubmittingAction(true);
     try {
       const supabase = createClient();
+
+      let effectiveRole = editRole;
+      let effectiveTitle = editTitle.trim() || null;
+
+      if (editRoleSelection.startsWith("custom:")) {
+        const customId = editRoleSelection.replace("custom:", "");
+        const customRole = availableRoles.find((r) => r.id === customId);
+        if (customRole) {
+          effectiveRole = customRole.baseTier;
+          if (!effectiveTitle) {
+            effectiveTitle = customRole.name;
+          }
+        }
+      }
+
       const { error } = await supabase
         .from("org_memberships")
         .update({
-          role: editRole,
-          title: editTitle.trim() || null,
+          role: effectiveRole,
+          title: effectiveTitle,
           is_active: editIsActive,
         })
         .eq("id", editingMember.id);
@@ -358,7 +422,7 @@ export default function MembersPage() {
       setMembers((prev) =>
         prev.map((m) =>
           m.id === editingMember.id
-            ? { ...m, role: editRole, title: editTitle.trim() || null, is_active: editIsActive }
+            ? { ...m, role: effectiveRole, title: effectiveTitle, is_active: editIsActive }
             : m
         )
       );
@@ -559,6 +623,14 @@ export default function MembersPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2.5">
+                <Link
+                  href="/roles"
+                  className="orgos-btn orgos-btn--secondary"
+                >
+                  <Shield className="w-3.5 h-3.5" />
+                  <span>Manage Roles</span>
+                </Link>
+
                 <button
                   type="button"
                   onClick={handleExportCSV}
@@ -644,11 +716,24 @@ export default function MembersPage() {
                 className="bg-slate-50 border border-slate-200 rounded-sm px-2.5 py-1.5 text-xs text-slate-700 focus:outline-none focus:border-[#1B365D]"
               >
                 <option value="all">All Roles</option>
-                <option value="president">Presidents</option>
-                <option value="treasurer">Treasurers</option>
-                <option value="officer">Officers</option>
-                <option value="event_lead">Event Leads</option>
-                <option value="member">Members</option>
+                <optgroup label="System Roles">
+                  <option value="president">Presidents</option>
+                  <option value="treasurer">Treasurers</option>
+                  <option value="officer">Officers</option>
+                  <option value="event_lead">Event Leads</option>
+                  <option value="member">Members</option>
+                </optgroup>
+                {availableRoles.filter((r) => r.isCustom).length > 0 && (
+                  <optgroup label="Chapter Custom Roles">
+                    {availableRoles
+                      .filter((r) => r.isCustom)
+                      .map((cr) => (
+                        <option key={cr.id} value={`custom:${cr.id}`}>
+                          {cr.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                )}
               </select>
 
               {/* Status filter */}
@@ -727,9 +812,29 @@ export default function MembersPage() {
 
                         {/* Role */}
                         <td>
-                          <span className={`orgos-badge ${getRoleBadgeClasses(member.role)}`}>
-                            {getRoleTitle(member.role)}
-                          </span>
+                          {(() => {
+                            const resolvedRole = resolveMemberRole(member, organization?.id);
+                            if (resolvedRole.isCustom) {
+                              return (
+                                <span
+                                  className="orgos-badge font-semibold inline-flex items-center gap-1"
+                                  style={{
+                                    backgroundColor: `${resolvedRole.color}15`,
+                                    color: resolvedRole.color,
+                                    borderColor: `${resolvedRole.color}40`,
+                                  }}
+                                >
+                                  <Shield className="w-3 h-3" />
+                                  {resolvedRole.name}
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className={`orgos-badge ${getRoleBadgeClasses(member.role)}`}>
+                                {resolvedRole.name}
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         {/* Title */}
@@ -917,18 +1022,57 @@ export default function MembersPage() {
             <form onSubmit={handleSaveMember} className="space-y-4">
               {/* Role selection */}
               <div>
-                <label className="orgos-meta-label text-slate-600 block mb-1">Assigned Organizational Role</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="orgos-meta-label text-slate-600 block">
+                    Assigned Organizational Role
+                  </label>
+                  <Link
+                    href="/roles"
+                    target="_blank"
+                    className="text-[11px] text-[#1B365D] hover:underline flex items-center gap-1 font-semibold"
+                  >
+                    <span>+ Add / Manage Roles</span>
+                  </Link>
+                </div>
                 <select
-                  value={editRole}
-                  onChange={(e) => setEditRole(e.target.value as MemberRecord["role"])}
+                  value={editRoleSelection}
+                  onChange={(e) => handleRoleSelectionChange(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-300 rounded-sm px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-[#1B365D]"
                 >
-                  <option value="member">Active Member (Standard access)</option>
-                  <option value="event_lead">Event Lead (Check-in &amp; event management)</option>
-                  <option value="officer">Officer (Operational checklists &amp; documents)</option>
-                  <option value="treasurer">Treasurer (Ledger &amp; financial tracking)</option>
-                  <option value="president">President (Full administration &amp; settings)</option>
+                  <optgroup label="System Roles">
+                    <option value="member">Active Member (Standard access)</option>
+                    <option value="event_lead">Event Lead (Check-in &amp; event management)</option>
+                    <option value="officer">Officer (Operational checklists &amp; documents)</option>
+                    <option value="treasurer">Treasurer (Ledger &amp; financial tracking)</option>
+                    <option value="president">President (Full administration &amp; settings)</option>
+                  </optgroup>
+                  {availableRoles.filter((r) => r.isCustom).length > 0 && (
+                    <optgroup label="Chapter Custom Roles">
+                      {availableRoles
+                        .filter((r) => r.isCustom)
+                        .map((cr) => (
+                          <option key={cr.id} value={`custom:${cr.id}`}>
+                            {cr.name} ({cr.baseTier} security tier)
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
                 </select>
+
+                {/* Role overview helper */}
+                {(() => {
+                  const selectedDef = editRoleSelection.startsWith("custom:")
+                    ? availableRoles.find((r) => r.id === editRoleSelection.replace("custom:", ""))
+                    : availableRoles.find((r) => r.id === editRoleSelection);
+                  if (selectedDef) {
+                    return (
+                      <p className="text-[11px] text-slate-500 mt-1 italic leading-snug">
+                        <strong>Overview:</strong> {selectedDef.overview}
+                      </p>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
 
               {/* Custom Title */}

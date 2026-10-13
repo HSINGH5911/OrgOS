@@ -14,6 +14,7 @@ import {
   Building2,
   GraduationCap,
   ShieldCheck,
+  Shield,
   CheckCircle2,
   Plus,
   Upload,
@@ -313,6 +314,16 @@ export default function DashboardView({ user }: DashboardViewProps) {
               <span className="flex items-center gap-1.5">
                 <Users className="w-3.5 h-3.5 text-[#1B365D]" />
                 Chapter Roster & Members
+              </span>
+              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+            </Link>
+            <Link
+              href="/roles"
+              className="orgos-btn orgos-btn--secondary w-full text-xs flex items-center justify-between"
+            >
+              <span className="flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5 text-[#1B365D]" />
+                Roles & Permissions
               </span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </Link>
