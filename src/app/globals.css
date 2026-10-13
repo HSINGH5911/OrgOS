@@ -7,6 +7,11 @@
 :root {
   --background: var(--orgos-bg-app);
   --foreground: var(--orgos-text-primary);
+  --sidebar-background: var(--orgos-bg-surface);
+  --sidebar-foreground: var(--orgos-text-primary);
+  --sidebar-border: var(--orgos-border-light);
+  --sidebar-accent: var(--orgos-primary-subtle);
+  --sidebar-accent-foreground: var(--orgos-primary);
 }
 
 body {

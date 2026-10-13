@@ -32,8 +32,9 @@
   --orgos-bg-app: #F8FAFC;
   --orgos-bg-surface: #FFFFFF;
   --orgos-bg-surface-dim: #F1F5F9;
-  --orgos-bg-sidebar: #0F1D33;
+  --orgos-bg-sidebar: #FFFFFF;
   --orgos-bg-sidebar-active: #1B365D;
+  --orgos-bg-sidebar-hover: #F1F5F9;
 
   /* Structural Borders */
   --orgos-border-light: #E2E8F0;
@@ -45,7 +46,8 @@
   --orgos-text-secondary: #475569;
   --orgos-text-tertiary: #94A3B8;
   --orgos-text-inverse: #FFFFFF;
-  --orgos-text-sidebar: #CBD5E1;
+  --orgos-text-sidebar: #475569;
+  --orgos-text-sidebar-active: #1B365D;
 
   /* ==========================================================================
      2. TYPOGRAPHY SCALE
@@ -107,7 +109,7 @@ body {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-right: 1px solid var(--orgos-border-light);
 }
 
 .orgos-main-pane {
