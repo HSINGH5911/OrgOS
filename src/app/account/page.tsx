@@ -74,33 +74,33 @@ export default function AccountPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+      <div className="min-h-screen bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#1B365D]" />
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center px-6">
-        <div className="max-w-md w-full text-center bg-slate-900 border border-slate-800 rounded-2xl p-8">
-          <div className="h-12 w-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mx-auto mb-4">
-            <User className="w-6 h-6" />
+      <div className="min-h-screen bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] flex flex-col items-center justify-center px-6">
+        <div className="max-w-md w-full text-center bg-white border border-slate-200 rounded-sm p-8 shadow-sm">
+          <div className="h-10 w-10 rounded-sm bg-[#EBF1F8] border border-[#C8D8E9] text-[#1B365D] flex items-center justify-center mx-auto mb-3">
+            <User className="w-5 h-5" />
           </div>
-          <h1 className="text-xl font-bold text-white mb-2">Sign In Required</h1>
-          <p className="text-xs text-slate-400 mb-6">
+          <h1 className="text-lg font-bold text-slate-900 mb-1.5">Sign In Required</h1>
+          <p className="text-xs text-slate-500 mb-6">
             Please log in to your OrgOS member account to view your profile and organization details.
           </p>
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-2.5 justify-center">
             <Link
               href="/login"
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-lg shadow-indigo-600/30 transition-all"
+              className="orgos-btn orgos-btn--primary"
             >
               Sign In
             </Link>
             <Link
               href="/"
-              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all"
+              className="orgos-btn orgos-btn--secondary"
             >
               Back to Home
             </Link>
@@ -136,38 +136,49 @@ export default function AccountPage() {
       })
     : "Recently";
 
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 relative px-6 py-12 selection:bg-indigo-500 selection:text-white">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-indigo-600/20 via-blue-600/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+  const getRoleBadgeClasses = (r: string) => {
+    switch (r) {
+      case "president":
+        return "orgos-badge--primary";
+      case "officer":
+      case "treasurer":
+      case "secretary":
+        return "orgos-badge--warning";
+      default:
+        return "orgos-badge--success";
+    }
+  };
 
+  return (
+    <div className="min-h-screen bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] relative px-6 py-12 selection:bg-[#1B365D] selection:text-white">
       <div className="max-w-2xl mx-auto relative z-10">
-        <div className="mb-6">
+        <div className="mb-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#1B365D] transition-colors"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Home</span>
           </Link>
         </div>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
           {/* Header */}
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center font-bold text-xl text-white shadow-md shadow-indigo-500/20">
+          <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="h-12 w-12 rounded-sm bg-[#1B365D] flex items-center justify-center font-bold text-lg text-white shadow-sm">
                 {initials}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">{fullName}</h1>
-                <p className="text-xs text-slate-400">{email}</p>
+                <h1 className="text-lg font-bold text-slate-900">{fullName}</h1>
+                <p className="text-xs text-slate-500">{email}</p>
               </div>
             </div>
 
             <button
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-sm transition-colors disabled:opacity-50"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>{isSigningOut ? "Signing Out..." : "Sign Out"}</span>
@@ -175,49 +186,49 @@ export default function AccountPage() {
           </div>
 
           {/* Details */}
-          <div className="p-6 space-y-6">
-            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-4">
-              <h2 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
+          <div className="p-6 space-y-5">
+            <div className="p-4 rounded-sm bg-slate-50 border border-slate-200 space-y-3">
+              <h2 className="orgos-meta-label text-[#1B365D] flex items-center gap-1.5">
                 <Building2 className="w-4 h-4" />
-                Organization & Campus
+                Organization &amp; Campus
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
                 <div>
-                  <p className="text-[11px] text-slate-400">Organization Name</p>
-                  <p className="text-sm font-semibold text-white mt-0.5">{organization}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Organization Name</p>
+                  <p className="text-sm font-semibold text-slate-900 mt-0.5">{organization}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400">Campus / University</p>
-                  <p className="text-sm font-semibold text-white mt-0.5">{university}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Campus / University</p>
+                  <p className="text-sm font-semibold text-slate-900 mt-0.5">{university}</p>
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="text-[11px] text-slate-400">Assigned Role</p>
-                  <span className="inline-block mt-1 px-2.5 py-1 text-xs font-bold uppercase rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                  <p className="text-[11px] text-slate-500 font-medium">Assigned Role</p>
+                  <span className={`inline-flex orgos-badge mt-1 ${getRoleBadgeClasses(role)}`}>
                     {role}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="p-5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-4">
-              <h2 className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                Account Security & Identification
+            <div className="p-4 rounded-sm bg-slate-50 border border-slate-200 space-y-3">
+              <h2 className="orgos-meta-label text-[#1B365D] flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-[#0F9D58]" />
+                Account Security &amp; Identification
               </h2>
 
-              <div className="space-y-3">
+              <div className="space-y-3 pt-1">
                 <div>
                   <div className="flex items-center justify-between">
-                    <p className="text-[11px] text-slate-400">Member ID (UUID)</p>
+                    <p className="text-[11px] text-slate-500 font-medium">Member ID (UUID)</p>
                     <button
                       onClick={handleCopyId}
-                      className="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300"
+                      className="inline-flex items-center gap-1 text-[11px] text-[#1B365D] hover:underline"
                     >
                       {copiedId ? (
                         <>
-                          <Check className="w-3 h-3 text-emerald-400" />
-                          <span className="text-emerald-400">Copied!</span>
+                          <Check className="w-3 h-3 text-[#0F9D58]" />
+                          <span className="text-[#0F9D58] font-medium">Copied!</span>
                         </>
                       ) : (
                         <>
@@ -227,17 +238,17 @@ export default function AccountPage() {
                       )}
                     </button>
                   </div>
-                  <p className="text-xs font-mono text-slate-300 bg-slate-900 px-3 py-2 rounded-lg border border-slate-800 mt-1 select-all truncate">
+                  <p className="text-xs font-mono text-slate-700 bg-white px-3 py-2 rounded-sm border border-slate-200 mt-1 select-all truncate">
                     {user.id}
                   </p>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800">
-                  <div className="flex items-center gap-2 text-xs text-slate-400">
-                    <Calendar className="w-4 h-4 text-slate-500" />
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <Calendar className="w-4 h-4 text-slate-400" />
                     <span>Member Since</span>
                   </div>
-                  <span className="text-xs font-medium text-slate-300">{memberSince}</span>
+                  <span className="text-xs font-medium text-slate-800">{memberSince}</span>
                 </div>
               </div>
             </div>

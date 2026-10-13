@@ -80,7 +80,7 @@ export default function AccountModal({
       case "president":
         return {
           title: "President / Admin",
-          classes: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+          classes: "orgos-badge--primary",
           privilege: "Full Administrative & Vault Control",
         };
       case "officer":
@@ -88,13 +88,13 @@ export default function AccountModal({
       case "secretary":
         return {
           title: "Executive Officer",
-          classes: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+          classes: "orgos-badge--warning",
           privilege: "Officer Operations & Attendance Access",
         };
       default:
         return {
           title: "Active Member",
-          classes: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+          classes: "orgos-badge--success",
           privilege: "Standard Organization Access",
         };
     }
@@ -104,36 +104,36 @@ export default function AccountModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-account-title"
     >
       <div
-        className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden relative"
+        className="w-full max-w-lg bg-white border border-slate-300 rounded-sm shadow-xl overflow-hidden relative text-slate-900"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="relative px-6 pt-6 pb-4 border-b border-slate-800 flex items-start justify-between">
-          <div className="flex items-center gap-3.5">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center font-bold text-lg text-white shadow-md shadow-indigo-500/20">
+        <div className="relative px-6 pt-5 pb-4 border-b border-slate-200 flex items-start justify-between bg-white">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-sm bg-[#1B365D] flex items-center justify-center font-bold text-sm text-white">
               {initials}
             </div>
             <div>
               <h2
                 id="modal-account-title"
-                className="text-lg font-bold text-white tracking-tight"
+                className="text-base font-bold text-slate-900 tracking-tight"
               >
                 {fullName}
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border ${roleInfo.classes}`}
+                  className={`orgos-badge ${roleInfo.classes}`}
                 >
                   {roleInfo.title}
                 </span>
-                <span className="text-xs text-slate-400 truncate max-w-[200px]">
+                <span className="text-xs text-slate-500 truncate max-w-[200px]">
                   {email}
                 </span>
               </div>
@@ -142,7 +142,7 @@ export default function AccountModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-sm text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             aria-label="Close account modal"
           >
             <X className="w-5 h-5" />
@@ -150,41 +150,42 @@ export default function AccountModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* Organization Details Card */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
-              <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="p-4 rounded-sm bg-slate-50 border border-slate-200 space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+              <span className="orgos-meta-label text-[#1B365D] flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5" />
                 Organization Affiliation
               </span>
-              <span className="text-[11px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 font-medium">
+              <span className="orgos-badge orgos-badge--success">
+                <span className="orgos-badge-dot" />
                 Active Member
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
               <div>
-                <p className="text-[11px] text-slate-400">Organization</p>
-                <p className="text-sm font-medium text-slate-200 mt-0.5">
+                <p className="text-[11px] text-slate-500 font-medium">Organization</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5">
                   {organization}
                 </p>
               </div>
 
               <div>
-                <p className="text-[11px] text-slate-400">University / Campus</p>
+                <p className="text-[11px] text-slate-500 font-medium">University / Campus</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <GraduationCap className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <p className="text-sm font-medium text-slate-200 truncate">
+                  <p className="text-sm font-semibold text-slate-900 truncate">
                     {university}
                   </p>
                 </div>
               </div>
 
               <div className="sm:col-span-2">
-                <p className="text-[11px] text-slate-400">Access Privileges</p>
-                <p className="text-xs text-slate-300 mt-0.5 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                <p className="text-[11px] text-slate-500 font-medium">Access Privileges</p>
+                <p className="text-xs text-slate-700 mt-0.5 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#0F9D58] shrink-0" />
                   <span>{roleInfo.privilege}</span>
                 </p>
               </div>
@@ -192,18 +193,18 @@ export default function AccountModal({
           </div>
 
           {/* Account & Security Card */}
-          <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-3">
-            <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5 pb-2 border-b border-slate-800/60">
+          <div className="p-4 rounded-sm bg-slate-50 border border-slate-200 space-y-3">
+            <span className="orgos-meta-label text-[#1B365D] flex items-center gap-1.5 pb-2 border-b border-slate-200">
               <IdCard className="w-3.5 h-3.5" />
               Member Credentials
             </span>
 
             <div className="space-y-3 pt-1">
               <div>
-                <p className="text-[11px] text-slate-400">Registered Email</p>
+                <p className="text-[11px] text-slate-500 font-medium">Registered Email</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-                  <span className="text-sm text-slate-200 font-mono">
+                  <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="text-xs font-mono text-slate-800">
                     {email}
                   </span>
                 </div>
@@ -211,15 +212,15 @@ export default function AccountModal({
 
               <div>
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] text-slate-400">Member ID (UUID)</p>
+                  <p className="text-[11px] text-slate-500 font-medium">Member ID (UUID)</p>
                   <button
                     onClick={handleCopyId}
-                    className="inline-flex items-center gap-1 text-[11px] text-indigo-400 hover:text-indigo-300 transition-colors"
+                    className="inline-flex items-center gap-1 text-[11px] text-[#1B365D] hover:underline"
                   >
                     {copiedId ? (
                       <>
-                        <Check className="w-3 h-3 text-emerald-400" />
-                        <span className="text-emerald-400">Copied!</span>
+                        <Check className="w-3 h-3 text-[#0F9D58]" />
+                        <span className="text-[#0F9D58] font-medium">Copied!</span>
                       </>
                     ) : (
                       <>
@@ -229,17 +230,17 @@ export default function AccountModal({
                     )}
                   </button>
                 </div>
-                <p className="text-xs font-mono text-slate-400 bg-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-800 mt-1 truncate select-all">
+                <p className="text-xs font-mono text-slate-700 bg-white px-2.5 py-1.5 rounded-sm border border-slate-200 mt-1 truncate select-all">
                   {user.id}
                 </p>
               </div>
 
               <div className="flex items-center justify-between pt-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
                   <span>Member Since</span>
                 </div>
-                <span className="text-xs font-medium text-slate-300">
+                <span className="text-xs font-medium text-slate-800">
                   {memberSince}
                 </span>
               </div>
@@ -248,12 +249,12 @@ export default function AccountModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="px-6 py-4 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between gap-3">
+        <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={onSignOut}
             disabled={isSigningOut}
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-rose-300 hover:text-rose-200 hover:bg-rose-500/10 border border-rose-500/20 rounded-lg transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 hover:text-red-800 hover:bg-red-50 border border-red-200 rounded-sm transition-colors disabled:opacity-50"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>{isSigningOut ? "Signing Out..." : "Sign Out"}</span>
@@ -262,7 +263,7 @@ export default function AccountModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors"
+            className="orgos-btn orgos-btn--secondary"
           >
             Done
           </button>

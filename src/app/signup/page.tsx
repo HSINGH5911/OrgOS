@@ -86,16 +86,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-slate-950 text-slate-100 relative px-6 py-12 selection:bg-indigo-500 selection:text-white">
-      {/* Background Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-indigo-600/20 via-blue-600/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[450px] h-[350px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="min-h-screen flex flex-col justify-center items-center bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] relative px-6 py-12 selection:bg-[#1B365D] selection:text-white">
       {/* Back to Home Link */}
-      <div className="w-full max-w-md mb-6">
+      <div className="w-full max-w-md mb-4">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-xs font-medium text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#1B365D] transition-colors"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Home</span>
@@ -103,42 +99,42 @@ export default function SignupPage() {
       </div>
 
       {/* Card Container */}
-      <div className="w-full max-w-md bg-slate-900/90 border border-slate-800 rounded-2xl p-8 shadow-xl backdrop-blur-xl relative z-10">
+      <div className="w-full max-w-md bg-white border border-slate-200 rounded-sm p-7 sm:p-8 shadow-sm relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="h-10 w-10 mx-auto rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center font-black text-xl text-white shadow-md shadow-indigo-500/25 mb-4">
+        <div className="text-center mb-6">
+          <div className="h-9 w-9 mx-auto rounded-sm bg-[#1B365D] flex items-center justify-center font-bold text-lg text-white shadow-sm mb-3">
             O
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Create an Account</h1>
-          <p className="text-xs text-slate-400 mt-2">
+          <h1 className="text-xl font-bold tracking-tight text-[#1B365D]">Create an Account</h1>
+          <p className="text-xs text-slate-500 mt-1">
             Join your student organization or sign up for OrgOS
           </p>
         </div>
 
         {/* Feedback Alerts */}
         {error && (
-          <div className="mb-6 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+          <div className="mb-5 p-3 rounded-sm bg-[#FEE2E2] border border-[#FCA5A5] text-[#DC2626] text-xs flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-[#DC2626]" />
             <span className="leading-relaxed">{error}</span>
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-6 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-start gap-2.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+          <div className="mb-5 p-3 rounded-sm bg-[#E8F5E9] border border-[#A3D9B5] text-[#0F9D58] text-xs flex items-start gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-[#0F9D58]" />
             <span className="leading-relaxed">{successMessage}</span>
           </div>
         )}
 
         {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3.5">
           {/* Full Name */}
           <div>
-            <label htmlFor="name" className="block text-xs font-medium text-slate-300 mb-1.5">
+            <label htmlFor="name" className="block text-xs font-semibold text-slate-700 mb-1">
               Full Name
             </label>
             <div className="relative">
-              <User className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 id="name"
                 type="text"
@@ -146,18 +142,18 @@ export default function SignupPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Alex Morgan"
                 required
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full bg-white border border-slate-300 rounded-sm pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D] transition-colors"
               />
             </div>
           </div>
 
           {/* Organization Name */}
           <div>
-            <label htmlFor="organization" className="block text-xs font-medium text-slate-300 mb-1.5">
+            <label htmlFor="organization" className="block text-xs font-semibold text-slate-700 mb-1">
               Organization Name
             </label>
             <div className="relative">
-              <Building className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <Building className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 id="organization"
                 type="text"
@@ -165,18 +161,18 @@ export default function SignupPage() {
                 onChange={(e) => setOrg(e.target.value)}
                 placeholder="e.g. Robotics Club, Hindu Yuva"
                 required
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full bg-white border border-slate-300 rounded-sm pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D] transition-colors"
               />
             </div>
           </div>
 
           {/* Email Address */}
           <div>
-            <label htmlFor="email" className="block text-xs font-medium text-slate-300 mb-1.5">
+            <label htmlFor="email" className="block text-xs font-semibold text-slate-700 mb-1">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <Mail className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 id="email"
                 type="email"
@@ -184,18 +180,18 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="officer@studentorg.edu"
                 required
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full bg-white border border-slate-300 rounded-sm pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D] transition-colors"
               />
             </div>
           </div>
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-xs font-medium text-slate-300 mb-1.5">
+            <label htmlFor="password" className="block text-xs font-semibold text-slate-700 mb-1">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 id="password"
                 type="password"
@@ -203,21 +199,21 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
                 required
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full bg-white border border-slate-300 rounded-sm pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D] transition-colors"
               />
             </div>
             {password && password.length > 0 && password.length < 8 && (
-              <p className="text-[11px] text-amber-400/90 mt-1">Must be at least 8 characters</p>
+              <p className="text-[11px] text-[#D97706] mt-1 font-medium">Must be at least 8 characters</p>
             )}
           </div>
 
           {/* Confirm Password */}
           <div>
-            <label htmlFor="confirmPassword" className="block text-xs font-medium text-slate-300 mb-1.5">
+            <label htmlFor="confirmPassword" className="block text-xs font-semibold text-slate-700 mb-1">
               Confirm Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
               <input
                 id="confirmPassword"
                 type="password"
@@ -225,25 +221,25 @@ export default function SignupPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter password"
                 required
-                className={`w-full bg-slate-950 border rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all ${
+                className={`w-full bg-white border rounded-sm pl-9 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none transition-colors ${
                   confirmPassword && password !== confirmPassword
-                    ? "border-rose-500/70 focus:ring-2 focus:ring-rose-500/40"
-                    : "border-slate-800 focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    ? "border-[#FCA5A5] focus:border-[#DC2626] focus:ring-1 focus:ring-[#DC2626]"
+                    : "border-slate-300 focus:border-[#1B365D] focus:ring-1 focus:ring-[#1B365D]"
                 }`}
               />
             </div>
             {confirmPassword && password !== confirmPassword && (
-              <p className="text-[11px] text-rose-400 mt-1">Passwords do not match</p>
+              <p className="text-[11px] text-[#DC2626] mt-1 font-medium">Passwords do not match</p>
             )}
           </div>
 
           {/* Actions Section */}
-          <div className="space-y-3 pt-2">
+          <div className="space-y-2.5 pt-2">
             {/* Primary Action: Create Account */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed transition-all text-white font-semibold text-sm shadow-lg shadow-indigo-600/30"
+              className="orgos-btn orgos-btn--primary w-full h-10"
             >
               {isLoading ? (
                 <>
@@ -256,35 +252,35 @@ export default function SignupPage() {
             </button>
 
             {/* Divider */}
-            <div className="relative my-3 flex items-center justify-center">
+            <div className="relative my-2.5 flex items-center justify-center">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-800" />
+                <div className="w-full border-t border-slate-200" />
               </div>
-              <div className="relative bg-slate-900 px-3 text-[11px] uppercase tracking-wider text-slate-500 font-medium">
+              <div className="relative bg-white px-2.5 text-[11px] uppercase tracking-wider text-slate-400 font-semibold">
                 or starting a new club?
               </div>
             </div>
 
-            {/* Secondary Action: Link directly to /register-org (no form validation required) */}
+            {/* Secondary Action: Link directly to /register-org */}
             <Link
               href="/register-org"
-              className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-950/80 hover:bg-slate-800/80 border border-slate-800 hover:border-indigo-500/50 active:scale-[0.99] transition-all text-slate-200 hover:text-white font-semibold text-sm shadow-sm group"
+              className="orgos-btn orgos-btn--secondary w-full h-10"
             >
-              <Building className="w-4 h-4 text-indigo-400 group-hover:scale-105 transition-transform" />
+              <Building className="w-4 h-4 text-[#1B365D]" />
               <span>Register a New Organization</span>
             </Link>
 
-            <p className="text-[11px] text-center text-slate-500 leading-relaxed px-2">
-              If your organization isn&apos;t on OrgOS yet, register it here to invite officers, members, and manage operations.
+            <p className="text-[11px] text-center text-slate-500 leading-relaxed px-1">
+              If your organization isn&apos;t on OrgOS yet, register it here to invite officers and members.
             </p>
           </div>
         </form>
 
         {/* Footer Navigation */}
-        <div className="mt-6 text-center text-xs text-slate-400">
+        <div className="mt-5 text-center text-xs text-slate-500">
           <p>
             Already have an account?{" "}
-            <Link href="/login" className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors">
+            <Link href="/login" className="font-semibold text-[#1B365D] hover:underline">
               Sign in
             </Link>
           </p>

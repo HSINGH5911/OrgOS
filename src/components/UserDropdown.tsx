@@ -113,9 +113,9 @@ export default function UserDropdown() {
   // While checking auth status, render a smooth skeleton/placeholder
   if (isLoading) {
     return (
-      <div className="flex items-center gap-3">
-        <div className="h-9 w-20 bg-slate-900 border border-slate-800 rounded-lg animate-pulse" />
-        <div className="h-9 w-20 bg-slate-900 border border-slate-800 rounded-lg animate-pulse" />
+      <div className="flex items-center gap-2">
+        <div className="h-9 w-16 bg-slate-200 rounded-sm animate-pulse" />
+        <div className="h-9 w-16 bg-slate-200 rounded-sm animate-pulse" />
       </div>
     );
   }
@@ -123,19 +123,17 @@ export default function UserDropdown() {
   // Not logged in -> Show Log In & Sign Up buttons
   if (!user) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <Link
           href="/login"
-          className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-200 bg-slate-900 
-          border border-slate-800 rounded-lg hover:bg-slate-800 hover:text-white hover:border-slate-700 transition-colors shadow-sm"
+          className="orgos-btn orgos-btn--secondary"
         >
           Log In
         </Link>
 
         <Link
           href="/signup"
-          className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 
-          hover:bg-indigo-500 rounded-lg shadow-sm shadow-indigo-600/30 transition-all font-semibold"
+          className="orgos-btn orgos-btn--primary"
         >
           Sign Up
         </Link>
@@ -165,13 +163,13 @@ export default function UserDropdown() {
   const getRoleBadgeClasses = (r: string) => {
     switch (r) {
       case "president":
-        return "bg-purple-500/10 text-purple-400 border-purple-500/20";
+        return "orgos-badge--primary";
       case "officer":
       case "treasurer":
       case "secretary":
-        return "bg-sky-500/10 text-sky-400 border-sky-500/20";
+        return "orgos-badge--warning";
       default:
-        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+        return "orgos-badge--success";
     }
   };
 
@@ -189,35 +187,35 @@ export default function UserDropdown() {
         <button
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
-          className={`flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border transition-all ${
+          className={`flex items-center gap-2 p-1.5 sm:px-2.5 sm:py-1 rounded-sm border transition-colors ${
             isOpen
-              ? "bg-slate-800 border-indigo-500/50 shadow-md shadow-indigo-500/10 ring-1 ring-indigo-500/30"
-              : "bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-850"
+              ? "bg-slate-50 border-[#1B365D] ring-1 ring-[#1B365D]"
+              : "bg-white border-slate-300 hover:border-slate-400 hover:bg-slate-50"
           }`}
           aria-expanded={isOpen}
           aria-haspopup="true"
         >
           {/* Avatar with Status indicator */}
           <div className="relative">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center font-bold text-xs text-white shadow-sm">
+            <div className="h-7 w-7 rounded-sm bg-[#1B365D] flex items-center justify-center font-bold text-xs text-white">
               {initials}
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-slate-950" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-[#0F9D58] rounded-full border border-white" />
           </div>
 
           {/* User & Org info on larger screens */}
           <div className="hidden sm:flex flex-col text-left">
-            <span className="text-xs font-semibold text-slate-200 leading-tight max-w-[120px] truncate">
+            <span className="text-xs font-semibold text-slate-900 leading-tight max-w-[120px] truncate">
               {fullName}
             </span>
-            <span className="text-[10px] text-slate-400 leading-tight max-w-[120px] truncate">
+            <span className="text-[10px] text-slate-500 leading-tight max-w-[120px] truncate">
               {organization}
             </span>
           </div>
 
           {/* Role badge */}
           <span
-            className={`hidden md:inline-block px-1.5 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded border ${getRoleBadgeClasses(
+            className={`hidden md:inline-flex orgos-badge ${getRoleBadgeClasses(
               role
             )}`}
           >
@@ -226,8 +224,8 @@ export default function UserDropdown() {
 
           {/* Dropdown arrow */}
           <ChevronDown
-            className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-              isOpen ? "rotate-180 text-indigo-400" : ""
+            className={`w-3.5 h-3.5 text-slate-500 transition-transform duration-200 ${
+              isOpen ? "rotate-180 text-[#1B365D]" : ""
             }`}
           />
         </button>
@@ -235,38 +233,36 @@ export default function UserDropdown() {
         {/* Dropdown Popover */}
         {isOpen && (
           <div
-            className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl shadow-black/60 p-2 z-50 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+            className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 rounded-sm bg-white border border-slate-200 shadow-md p-2 z-50 text-slate-900"
             role="menu"
             aria-orientation="vertical"
           >
             {/* User Profile Header in Menu */}
-            <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 mb-2">
+            <div className="p-3 rounded-sm bg-slate-50 border border-slate-200 mb-2">
               <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-blue-500 flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md shadow-indigo-500/20">
+                <div className="h-9 w-9 rounded-sm bg-[#1B365D] flex items-center justify-center font-bold text-xs text-white shrink-0">
                   {initials}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-sm font-bold text-white truncate">
+                    <p className="text-sm font-semibold text-slate-900 truncate">
                       {fullName}
                     </p>
                     <span
-                      className={`text-[9px] uppercase px-1.5 py-0.2 rounded border font-semibold ${getRoleBadgeClasses(
-                        role
-                      )}`}
+                      className={`orgos-badge ${getRoleBadgeClasses(role)}`}
                     >
                       {roleTitle}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 truncate">{email}</p>
+                  <p className="text-xs text-slate-500 truncate">{email}</p>
                 </div>
               </div>
 
               {/* Organization affiliation badge */}
-              <div className="mt-2.5 pt-2 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+              <div className="mt-2.5 pt-2 border-t border-slate-200 flex items-center justify-between text-xs text-slate-600">
                 <div className="flex items-center gap-1.5 truncate">
-                  <Building2 className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span className="truncate text-slate-300 font-medium">
+                  <Building2 className="w-3.5 h-3.5 text-[#1B365D] shrink-0" />
+                  <span className="truncate text-slate-800 font-medium">
                     {organization}
                   </span>
                 </div>
@@ -286,18 +282,18 @@ export default function UserDropdown() {
                   setIsOpen(false);
                   setIsAccountModalOpen(true);
                 }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors text-left group"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors text-left group"
                 role="menuitem"
               >
-                <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20 transition-colors">
+                <div className="p-1 rounded-sm bg-[#EBF1F8] text-[#1B365D]">
                   <User className="w-3.5 h-3.5" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-slate-200 group-hover:text-white font-medium">
+                  <p className="text-slate-900 font-medium">
                     Account Details
                   </p>
                   <p className="text-[10px] text-slate-500">
-                    View member profile & org role
+                    View member profile &amp; org role
                   </p>
                 </div>
               </button>
@@ -305,14 +301,14 @@ export default function UserDropdown() {
               <Link
                 href="/register-org"
                 onClick={() => setIsOpen(false)}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800/80 transition-colors text-left group"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors text-left group"
                 role="menuitem"
               >
-                <div className="p-1.5 rounded-lg bg-sky-500/10 text-sky-400 group-hover:bg-sky-500/20 transition-colors">
+                <div className="p-1 rounded-sm bg-[#FEF3C7] text-[#D97706]">
                   <PlusCircle className="w-3.5 h-3.5" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-slate-200 group-hover:text-white font-medium">
+                  <p className="text-slate-900 font-medium">
                     Register New Org
                   </p>
                   <p className="text-[10px] text-slate-500">
@@ -323,17 +319,17 @@ export default function UserDropdown() {
             </div>
 
             {/* Divider */}
-            <div className="my-1.5 border-t border-slate-800/80" />
+            <div className="my-1.5 border-t border-slate-200" />
 
             {/* Sign Out Action */}
             <button
               type="button"
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors text-left disabled:opacity-50"
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-sm text-xs font-medium text-red-700 hover:text-red-800 hover:bg-red-50 transition-colors text-left disabled:opacity-50"
               role="menuitem"
             >
-              <div className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400">
+              <div className="p-1 rounded-sm bg-red-100 text-red-700">
                 {isSigningOut ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (

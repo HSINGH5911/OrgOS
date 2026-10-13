@@ -1,13 +1,15 @@
+@import "../../orgos.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: #090d16;
-  --foreground: #f8fafc;
+  --background: var(--orgos-bg-app);
+  --foreground: var(--orgos-text-primary);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: var(--orgos-text-primary);
+  background-color: var(--orgos-bg-app);
 }

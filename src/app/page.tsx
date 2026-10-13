@@ -44,49 +44,40 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 relative overflow-hidden selection:bg-indigo-500 selection:text-white">
-      {/* Background Gradients */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[450px] bg-gradient-to-b from-indigo-600/15 via-blue-600/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[400px] bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-
+    <div className="min-h-screen flex flex-col justify-between bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] selection:bg-[#1B365D] selection:text-white">
       {/* Navigation Header */}
-      <header className="border-b border-slate-800/80 bg-slate-950/60 backdrop-blur-md sticky top-0 z-30 px-6 py-4 sm:px-12">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <header className="border-b border-slate-200 bg-white sticky top-0 z-30 px-6 sm:px-12 h-14 flex items-center">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center font-black text-lg text-white shadow-md shadow-indigo-500/20">
+            <div className="h-8 w-8 rounded-sm bg-[#1B365D] flex items-center justify-center font-bold text-base text-white shadow-sm">
               O
             </div>
-            <div>
-              <span className="font-bold text-base tracking-tight text-white">OrgOS</span>
-              <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-[10px] uppercase font-semibold tracking-wider rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-base tracking-tight text-[#1B365D]">OrgOS</span>
+              <span className="orgos-badge orgos-badge--primary hidden sm:inline-flex">
                 MVP Preview
               </span>
             </div>
           </div>
 
           <UserDropdown />
-
-
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl mx-auto px-6 py-12 sm:px-12 w-full flex flex-col justify-center">
+      <main className="flex-1 max-w-6xl mx-auto px-6 py-10 sm:px-12 w-full flex flex-col justify-center">
         {/* Hero Section */}
-        <section className="text-center max-w-3xl mx-auto mb-16 pt-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/60 border border-indigo-800/60 text-xs font-medium text-indigo-300 mb-6 shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+        <section className="text-center max-w-3xl mx-auto mb-14 pt-2">
+          <div className="orgos-badge orgos-badge--primary mb-4 inline-flex">
+            <span className="orgos-badge-dot" />
             <span>The Operating System for Collegiate Student Organizations</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-[1.1] mb-6">
-            Eliminate Leadership{" "}
-            <span className="bg-gradient-to-r from-indigo-400 via-sky-300 to-blue-400 bg-clip-text text-transparent">
-              Transition Amnesia
-            </span>
+          <h1 className="text-3xl sm:text-5xl font-bold text-[#1B365D] tracking-tight leading-[1.15] mb-4">
+            Eliminate Leadership Transition Amnesia
           </h1>
 
-          <p className="text-base sm:text-lg text-slate-300 leading-relaxed mb-8 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-6 max-w-2xl mx-auto">
             OrgOS unifies messy Google Drives, scattered spreadsheets, and ephemeral chats into a single intelligent platform with automated officer handovers and historical AI search.
           </p>
 
@@ -94,96 +85,141 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-6">
             <a
               href="#pillars"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 transition-all text-white font-semibold shadow-lg shadow-indigo-600/30 text-sm"
+              className="orgos-btn orgos-btn--primary w-full sm:w-auto"
             >
               <span>Explore Platform Pillars</span>
               <ArrowRight className="w-4 h-4" />
             </a>
 
-            <div className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-900/90 border border-slate-800 text-xs text-slate-400">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>{statusMessage || "Next.js App Router + Supabase active"}</span>
+            <div className="orgos-badge orgos-badge--success py-2 px-3 text-xs font-medium w-full sm:w-auto justify-center">
+              <span className="orgos-badge-dot" />
+              <span>{statusMessage || "Supabase PostgreSQL connected"}</span>
             </div>
           </div>
         </section>
 
         {/* Feature Pillars Grid */}
-        <section id="pillars" className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+        <section id="pillars" className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-14">
           {/* Pillar 1: AI Historical Memory */}
-          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80 hover:border-indigo-500/40 transition-all group backdrop-blur-sm">
-            <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4 group-hover:bg-indigo-500/20 transition-all">
-              <Sparkles className="w-5 h-5" />
+          <div className="p-5 rounded-sm bg-white border border-slate-200 shadow-sm hover:border-[#1B365D] transition-colors">
+            <div className="h-8 w-8 rounded-sm bg-[#EBF1F8] border border-[#C8D8E9] flex items-center justify-center text-[#1B365D] mb-3">
+              <Sparkles className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-bold text-white mb-2">AI Historical Memory</h2>
-            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+            <h2 className="text-base font-semibold text-slate-900 mb-1.5">AI Historical Memory</h2>
+            <p className="text-xs text-slate-600 leading-relaxed mb-3">
               Query past event budgets, reservation permits, and post-mortems instantly:
             </p>
-            <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 text-xs font-mono text-indigo-300 flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
+            <div className="p-2.5 rounded-sm bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 flex items-center gap-2">
+              <Search className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
               <span>&ldquo;Who did we contact for catering last fall?&rdquo;</span>
             </div>
           </div>
 
           {/* Pillar 2: QR Event Attendance */}
-          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80 hover:border-emerald-500/40 transition-all group backdrop-blur-sm">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4 group-hover:bg-emerald-500/20 transition-all">
-              <CalendarCheck className="w-5 h-5" />
+          <div className="p-5 rounded-sm bg-white border border-slate-200 shadow-sm hover:border-[#0F9D58] transition-colors">
+            <div className="h-8 w-8 rounded-sm bg-[#E8F5E9] border border-[#A3D9B5] flex items-center justify-center text-[#0F9D58] mb-3">
+              <CalendarCheck className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-bold text-white mb-2">Instant QR Attendance</h2>
-            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+            <h2 className="text-base font-semibold text-slate-900 mb-1.5">Instant QR Attendance</h2>
+            <p className="text-xs text-slate-600 leading-relaxed mb-3">
               Fast 3-second check-in at meetings and fests without requiring students to download any app.
             </p>
-            <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 text-xs font-mono text-emerald-300 flex items-center gap-2">
-              <Users className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-              <span>Real-time check-in roster & CSV exports</span>
+            <div className="p-2.5 rounded-sm bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 flex items-center gap-2">
+              <Users className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+              <span>Real-time check-in roster &amp; CSV exports</span>
             </div>
           </div>
 
           {/* Pillar 3: Officer Transition Suite */}
-          <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800/80 hover:border-sky-500/40 transition-all group backdrop-blur-sm">
-            <div className="h-10 w-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-4 group-hover:bg-sky-500/20 transition-all">
-              <BookOpen className="w-5 h-5" />
+          <div className="p-5 rounded-sm bg-white border border-slate-200 shadow-sm hover:border-[#D97706] transition-colors">
+            <div className="h-8 w-8 rounded-sm bg-[#FEF3C7] border border-[#FCD34D] flex items-center justify-center text-[#D97706] mb-3">
+              <BookOpen className="w-4 h-4" />
             </div>
-            <h2 className="text-lg font-bold text-white mb-2">Officer Transition Suite</h2>
-            <p className="text-sm text-slate-400 leading-relaxed mb-4">
+            <h2 className="text-base font-semibold text-slate-900 mb-1.5">Officer Transition Suite</h2>
+            <p className="text-xs text-slate-600 leading-relaxed mb-3">
               Structured handover checklists for bank cards, university compliance, and role dossiers.
             </p>
-            <div className="p-3 rounded-lg bg-slate-950/80 border border-slate-800/80 text-xs font-mono text-sky-300 flex items-center gap-2">
-              <MessageSquareText className="w-3.5 h-3.5 text-slate-500 flex-shrink-0" />
-              <span>One-click role transfer & alumni archive</span>
+            <div className="p-2.5 rounded-sm bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700 flex items-center gap-2">
+              <MessageSquareText className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+              <span>One-click role transfer &amp; alumni archive</span>
             </div>
           </div>
         </section>
 
-        {/* Interactive Interactive Preview Card */}
-        <section className="rounded-2xl border border-slate-800/80 bg-slate-900/30 p-6 sm:p-8 backdrop-blur-sm mb-12">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-800">
+        {/* Interactive Preview Card with Grounding Box & Spreadsheet Table Pattern */}
+        <section className="rounded-sm border border-slate-200 bg-white p-6 sm:p-7 shadow-sm mb-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-200">
             <div>
-              <h3 className="font-bold text-base text-white">Incoming Officer Copilot Simulator</h3>
-              <p className="text-xs text-slate-400">Previewing how OrgOS answers queries from historical documents</p>
+              <h3 className="font-semibold text-base text-slate-900">Incoming Officer Copilot Simulator</h3>
+              <p className="text-xs text-slate-500">Previewing grounded retrieval and operational records from historical files</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              RAG Pipeline Ready
+            <span className="orgos-badge orgos-badge--success self-start sm:self-auto">
+              <span className="orgos-badge-dot" />
+              RAG Pipeline Verified
             </span>
           </div>
 
           <div className="space-y-4">
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-4">
-              <p className="text-xs font-semibold text-indigo-400 uppercase tracking-wider mb-1">Incoming Officer</p>
-              <p className="text-sm text-slate-200">
+            {/* Incoming officer query prompt */}
+            <div className="bg-slate-50 border border-slate-200 rounded-sm p-3.5">
+              <p className="orgos-meta-label text-[#1B365D] mb-1">Incoming Officer Query</p>
+              <p className="text-xs text-slate-800">
                 &ldquo;What is our venue reservation timeline and who was our university contact for the spring showcase?&rdquo;
               </p>
             </div>
 
-            <div className="bg-indigo-950/20 border border-indigo-900/40 rounded-xl p-4">
-              <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">OrgOS Historical Copilot</p>
-              <p className="text-sm text-slate-300 leading-relaxed mb-3">
-                Based on the <span className="text-indigo-300 underline underline-offset-2">2025 Event Recap & Budget</span>, room reservations for the Grand Ballroom must be submitted at least <strong>6 weeks prior</strong> via Student Activities.
+            {/* OrgOS Grounding Callout Component */}
+            <div className="orgos-grounding-box">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#0F9D58] uppercase tracking-wider mb-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Verified Historical Citation</span>
+              </div>
+              <p className="text-xs text-slate-800 leading-relaxed mb-2.5">
+                Based on the <strong>2025 Event Recap &amp; Budget</strong>, room reservations for the Grand Ballroom must be submitted at least <strong>6 weeks prior</strong> via Student Activities.
               </p>
-              <div className="flex flex-wrap gap-2 text-[11px] text-slate-400">
-                <span className="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Source: Event_Guide_2025.pdf (Page 4)</span>
-                <span className="bg-slate-900 px-2 py-0.5 rounded border border-slate-800">Contact: studentaffairs@university.edu</span>
+              <div className="flex flex-wrap gap-2 text-[11px] text-slate-600">
+                <span className="bg-white px-2 py-0.5 rounded-sm border border-[#A3D9B5]">Source: Event_Guide_2025.pdf (Page 4)</span>
+                <span className="bg-white px-2 py-0.5 rounded-sm border border-[#A3D9B5]">Contact: studentaffairs@university.edu</span>
+              </div>
+            </div>
+
+            {/* High-Density Spreadsheet Table Pattern */}
+            <div className="pt-2">
+              <div className="flex items-center justify-between mb-2">
+                <span className="orgos-meta-label">Associated Ledger Records (Spring Showcase 2025)</span>
+                <span className="text-[11px] text-slate-500 font-mono">3 records reconciled</span>
+              </div>
+              <div className="orgos-table-wrapper">
+                <table className="orgos-table">
+                  <thead>
+                    <tr>
+                      <th>Line Item / Vendor</th>
+                      <th>Category</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className="font-medium text-slate-800">Grand Ballroom Deposit (Student Union)</td>
+                      <td><span className="orgos-badge orgos-badge--primary">Venue</span></td>
+                      <td className="orgos-mono font-medium">$500.00</td>
+                      <td><span className="orgos-badge orgos-badge--success"><span className="orgos-badge-dot" />Reconciled</span></td>
+                    </tr>
+                    <tr>
+                      <td className="font-medium text-slate-800">Campus Chai &amp; Samosa Catering</td>
+                      <td><span className="orgos-badge orgos-badge--primary">Food</span></td>
+                      <td className="orgos-mono font-medium">$345.50</td>
+                      <td><span className="orgos-badge orgos-badge--success"><span className="orgos-badge-dot" />Reconciled</span></td>
+                    </tr>
+                    <tr>
+                      <td className="font-medium text-slate-800">Microphone &amp; Lighting Audio Kit</td>
+                      <td><span className="orgos-badge orgos-badge--primary">AV Equipment</span></td>
+                      <td className="orgos-mono font-medium">$120.00</td>
+                      <td><span className="orgos-badge orgos-badge--warning"><span className="orgos-badge-dot" />Audit Pending</span></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -191,18 +227,18 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-slate-950/80 px-6 py-6 sm:px-12 text-xs text-slate-500 z-10">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <footer className="border-t border-slate-200 bg-white px-6 py-4 sm:px-12 text-xs text-slate-500">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-indigo-400" />
-            <span>OrgOS • Built for collegiate organizations</span>
+            <ShieldCheck className="w-4 h-4 text-[#1B365D]" />
+            <span>OrgOS Operations • High-Density Platform for Student Organizations</span>
           </div>
           <div className="flex items-center gap-4">
             <a
               href="https://github.com/HSINGH5911/OrgOS"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-slate-300 transition-colors flex items-center gap-1"
+              className="hover:text-slate-900 transition-colors flex items-center gap-1 font-medium"
             >
               <span>GitHub Repository</span>
               <ExternalLink className="w-3 h-3" />
