@@ -37,9 +37,18 @@ interface MembershipData {
   } | null;
 }
 
+export interface ChapterDocument {
+  id: string;
+  name: string;
+  category: string;
+  status: "Indexed" | "In Review" | "Processing";
+  lastModified: string;
+}
+
 export default function DashboardView({ user }: DashboardViewProps) {
   const [membership, setMembership] = useState<MembershipData | null>(null);
   const [loadingOrg, setLoadingOrg] = useState(true);
+  const [documents, setDocuments] = useState<ChapterDocument[]>([]);
 
   // Fetch the user's organization and role from Supabase
   useEffect(() => {
@@ -210,73 +219,60 @@ export default function DashboardView({ user }: DashboardViewProps) {
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="orgos-title-h2">Chapter Knowledge & Operations Archive</h2>
-            <span className="text-xs text-slate-500">Real-time DB sync</span>
+            {documents.length > 0 && (
+              <span className="text-xs text-slate-500 orgos-mono">
+                {documents.length} {documents.length === 1 ? "document" : "documents"}
+              </span>
+            )}
           </div>
 
-          <div className="orgos-table-wrapper">
-            <table className="orgos-table">
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th>Resource / Operation</th>
-                  <th>Grounding Status</th>
-                  <th>Last Modified</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    <span className="orgos-badge orgos-badge--primary">Document</span>
-                  </td>
-                  <td className="font-medium text-slate-900">
-                    Spring_Banquet_Budget_2025.xlsx
-                  </td>
-                  <td>
-                    <span className="text-xs text-[#0F9D58] flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Indexed
-                    </span>
-                  </td>
-                  <td className="text-slate-500 orgos-mono">Oct 2026</td>
-                </tr>
-                <tr>
-                  <td>
-                    <span className="orgos-badge orgos-badge--warning">Checklist</span>
-                  </td>
-                  <td className="font-medium text-slate-900">
-                    Annual_University_Reregistration.pdf
-                  </td>
-                  <td>
-                    <span className="text-xs text-[#D97706] flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      In Review
-                    </span>
-                  </td>
-                  <td className="text-slate-500 orgos-mono">Sep 2026</td>
-                </tr>
-                <tr>
-                  <td>
-                    <span className="orgos-badge orgos-badge--primary">Guide</span>
-                  </td>
-                  <td className="font-medium text-slate-900">
-                    Grand_Ballroom_Permit_Guidelines.docx
-                  </td>
-                  <td>
-                    <span className="text-xs text-[#0F9D58] flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Indexed
-                    </span>
-                  </td>
-                  <td className="text-slate-500 orgos-mono">Aug 2026</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Grounding Audit Callout */}
-          <div className="orgos-grounding-box">
-            <strong>Institutional Memory Status:</strong> All documents uploaded by officers are parsed into text chunks, embedded with pgvector, and strictly isolated to <code>{orgName}</code> via Row-Level Security.
-          </div>
+          {documents.length === 0 ? (
+            <div className="bg-white border border-dashed border-slate-300 rounded-sm p-10 text-center flex flex-col items-center justify-center">
+              <div className="h-10 w-10 rounded-sm bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400 mb-3">
+                <FileText className="w-5 h-5 text-slate-400" />
+              </div>
+              <h3 className="font-semibold text-sm text-slate-800 mb-1">
+                No documents uploaded
+              </h3>
+              <p className="text-xs text-slate-500 max-w-sm mb-4 leading-relaxed">
+                No documents have been uploaded to this chapter archive yet. Upload agendas, permits, or budgets to begin building your AI institutional memory.
+              </p>
+              <button className="orgos-btn orgos-btn--secondary text-xs flex items-center gap-1.5">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload Document</span>
+              </button>
+            </div>
+          ) : (
+            <div className="orgos-table-wrapper">
+              <table className="orgos-table">
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Resource / Operation</th>
+                    <th>Grounding Status</th>
+                    <th>Last Modified</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {documents.map((doc) => (
+                    <tr key={doc.id}>
+                      <td>
+                        <span className="orgos-badge orgos-badge--primary">{doc.category}</span>
+                      </td>
+                      <td className="font-medium text-slate-900">{doc.name}</td>
+                      <td>
+                        <span className="text-xs text-[#0F9D58] flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {doc.status}
+                        </span>
+                      </td>
+                      <td className="text-slate-500 orgos-mono">{doc.lastModified}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Side Panel: Security & Tenancy Info */}
@@ -284,10 +280,6 @@ export default function DashboardView({ user }: DashboardViewProps) {
           <h2 className="orgos-title-h2">Chapter Metadata</h2>
           
           <div className="space-y-3 text-xs">
-            <div className="flex justify-between py-2 border-b border-slate-100">
-              <span className="text-slate-500">Tenancy Isolation</span>
-              <span className="orgos-badge orgos-badge--success">RLS Enforced</span>
-            </div>
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Your Org Role</span>
               <span className="font-semibold text-slate-800 capitalize">{role}</span>
@@ -299,10 +291,6 @@ export default function DashboardView({ user }: DashboardViewProps) {
             <div className="flex justify-between py-2 border-b border-slate-100">
               <span className="text-slate-500">Campus</span>
               <span className="font-semibold text-slate-800 truncate max-w-[140px]">{university}</span>
-            </div>
-            <div className="flex justify-between py-2">
-              <span className="text-slate-500">Knowledge Chunks</span>
-              <span className="font-mono text-[#1B365D] font-semibold">Ready for Phase 2</span>
             </div>
           </div>
 
