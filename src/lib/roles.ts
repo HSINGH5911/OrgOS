@@ -232,66 +232,130 @@ export const BUILTIN_ROLES: RoleDefinition[] = [
 ];
 
 const STORAGE_KEY_PREFIX = "orgos_custom_roles_";
+const DELETED_ROLES_KEY_PREFIX = "orgos_deleted_roles_";
 
 /**
- * Returns all roles (built-in + organization custom roles)
+ * Returns all roles (built-in + organization custom roles/overrides),
+ * filtering out any deleted roles while ensuring President cannot be deleted.
  */
 export function getRolesForOrg(orgId?: string): RoleDefinition[] {
   if (typeof window === "undefined") {
     return BUILTIN_ROLES;
   }
 
-  const key = `${STORAGE_KEY_PREFIX}${orgId || "default"}`;
+  const orgKey = orgId || "default";
+  const customKey = `${STORAGE_KEY_PREFIX}${orgKey}`;
+  const deletedKey = `${DELETED_ROLES_KEY_PREFIX}${orgKey}`;
+
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return BUILTIN_ROLES;
-    const customRoles: RoleDefinition[] = JSON.parse(raw);
-    return [...BUILTIN_ROLES, ...customRoles];
+    // 1. Read deleted roles list (President is always protected)
+    const rawDeleted = localStorage.getItem(deletedKey);
+    const deletedIds: string[] = rawDeleted ? JSON.parse(rawDeleted) : [];
+    const activeDeletedIds = new Set(deletedIds.filter((id) => id !== "president"));
+
+    // 2. Read custom/overridden roles
+    const rawCustom = localStorage.getItem(customKey);
+    const customRoles: RoleDefinition[] = rawCustom ? JSON.parse(rawCustom) : [];
+    const customMap = new Map(customRoles.map((r) => [r.id, r]));
+
+    // 3. Start with built-in roles that have not been deleted
+    const result: RoleDefinition[] = [];
+    for (const builtin of BUILTIN_ROLES) {
+      if (builtin.id === "president" || !activeDeletedIds.has(builtin.id)) {
+        // If an edited override exists for this built-in role, use it
+        if (customMap.has(builtin.id)) {
+          result.push(customMap.get(builtin.id)!);
+          customMap.delete(builtin.id);
+        } else {
+          result.push(builtin);
+        }
+      }
+    }
+
+    // 4. Append remaining custom roles that have not been deleted
+    customMap.forEach((customRole) => {
+      if (!activeDeletedIds.has(customRole.id)) {
+        result.push(customRole);
+      }
+    });
+
+    return result;
   } catch (e) {
-    console.error("Error reading custom roles from storage:", e);
+    console.error("Error reading roles from storage:", e);
     return BUILTIN_ROLES;
   }
 }
 
 /**
- * Saves or updates a custom role for an organization
+ * Saves or updates a role for an organization.
+ * President role cannot be modified.
  */
 export function saveCustomRoleForOrg(orgId: string, role: RoleDefinition): void {
   if (typeof window === "undefined") return;
+  // Guard: President cannot be edited
+  if (role.id === "president") return;
 
-  const key = `${STORAGE_KEY_PREFIX}${orgId || "default"}`;
+  const orgKey = orgId || "default";
+  const customKey = `${STORAGE_KEY_PREFIX}${orgKey}`;
+  const deletedKey = `${DELETED_ROLES_KEY_PREFIX}${orgKey}`;
+
   try {
-    const raw = localStorage.getItem(key);
+    // If this role was previously in the deleted list, resurrect it
+    const rawDeleted = localStorage.getItem(deletedKey);
+    if (rawDeleted) {
+      const deleted: string[] = JSON.parse(rawDeleted);
+      const updated = deleted.filter((id) => id !== role.id);
+      localStorage.setItem(deletedKey, JSON.stringify(updated));
+    }
+
+    // Save/update in custom list
+    const raw = localStorage.getItem(customKey);
     let list: RoleDefinition[] = raw ? JSON.parse(raw) : [];
 
     const existingIndex = list.findIndex((r) => r.id === role.id);
     if (existingIndex >= 0) {
-      list[existingIndex] = { ...role, isCustom: true };
+      list[existingIndex] = { ...role };
     } else {
-      list.push({ ...role, isCustom: true, createdAt: new Date().toISOString() });
+      list.push({ ...role, createdAt: role.createdAt || new Date().toISOString() });
     }
 
-    localStorage.setItem(key, JSON.stringify(list));
+    localStorage.setItem(customKey, JSON.stringify(list));
   } catch (e) {
-    console.error("Error saving custom role:", e);
+    console.error("Error saving role:", e);
   }
 }
 
 /**
- * Deletes a custom role for an organization
+ * Deletes a role for an organization.
+ * President role cannot be deleted.
  */
 export function deleteCustomRoleForOrg(orgId: string, roleId: string): void {
   if (typeof window === "undefined") return;
+  // Guard: President cannot be deleted
+  if (roleId === "president") return;
 
-  const key = `${STORAGE_KEY_PREFIX}${orgId || "default"}`;
+  const orgKey = orgId || "default";
+  const customKey = `${STORAGE_KEY_PREFIX}${orgKey}`;
+  const deletedKey = `${DELETED_ROLES_KEY_PREFIX}${orgKey}`;
+
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return;
-    const list: RoleDefinition[] = JSON.parse(raw);
-    const updated = list.filter((r) => r.id !== roleId);
-    localStorage.setItem(key, JSON.stringify(updated));
+    // 1. Remove from custom roles if present
+    const rawCustom = localStorage.getItem(customKey);
+    if (rawCustom) {
+      const list: RoleDefinition[] = JSON.parse(rawCustom);
+      const updated = list.filter((r) => r.id !== roleId);
+      localStorage.setItem(customKey, JSON.stringify(updated));
+    }
+
+    // 2. Add to deleted roles list to suppress built-in roles
+    const rawDeleted = localStorage.getItem(deletedKey);
+    const deletedList: string[] = rawDeleted ? JSON.parse(rawDeleted) : [];
+    if (!deletedList.includes(roleId)) {
+      deletedList.push(roleId);
+      localStorage.setItem(deletedKey, JSON.stringify(deletedList));
+    }
   } catch (e) {
-    console.error("Error deleting custom role:", e);
+    console.error("Error deleting role:", e);
   }
 }
 

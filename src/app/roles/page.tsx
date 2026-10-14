@@ -241,6 +241,10 @@ export default function RolesPage() {
 
   // Open Edit Role Modal
   const handleOpenEdit = (role: RoleDefinition) => {
+    if (role.id === "president") {
+      showNotification("error", "The President role is the primary chapter authority and cannot be modified.");
+      return;
+    }
     setEditingRole(role);
     setFormName(role.name);
     setFormSlug(role.id);
@@ -300,6 +304,11 @@ export default function RolesPage() {
       return;
     }
 
+    if (slugTrimmed === "president" || editingRole?.id === "president") {
+      setFormError("The President role cannot be modified.");
+      return;
+    }
+
     // Check slug collision with built-in roles if adding
     if (!editingRole) {
       const exists = roles.some((r) => r.id === slugTrimmed);
@@ -327,7 +336,7 @@ export default function RolesPage() {
       name: nameTrimmed,
       overview: formOverview.trim(),
       baseTier: formBaseTier,
-      isCustom: true,
+      isCustom: editingRole ? editingRole.isCustom : true,
       color: formColor,
       badgeVariant,
       permissions: formPermissions,
@@ -350,6 +359,11 @@ export default function RolesPage() {
   // Confirm delete role
   const handleDeleteRole = () => {
     if (!deletingRole) return;
+    if (deletingRole.id === "president") {
+      showNotification("error", "The President role cannot be deleted.");
+      setDeletingRole(null);
+      return;
+    }
     const orgId = organization?.id || "local-org";
     deleteCustomRoleForOrg(orgId, deletingRole.id);
     refreshRoles();
@@ -607,7 +621,12 @@ export default function RolesPage() {
                             </div>
                           </div>
 
-                          {role.isCustom ? (
+                          {role.id === "president" ? (
+                            <span className="orgos-badge orgos-badge--primary flex items-center gap-1">
+                              <Lock className="w-2.5 h-2.5" />
+                              Protected
+                            </span>
+                          ) : role.isCustom ? (
                             <span className="orgos-badge orgos-badge--warning">Custom</span>
                           ) : (
                             <span className="orgos-badge orgos-badge--neutral">System</span>
@@ -669,7 +688,7 @@ export default function RolesPage() {
                         </button>
 
                         <div className="flex items-center gap-1.5">
-                          {role.isCustom && canManageRoles && (
+                          {role.id !== "president" ? (
                             <>
                               <button
                                 type="button"
@@ -688,6 +707,14 @@ export default function RolesPage() {
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </>
+                          ) : (
+                            <span
+                              className="text-[11px] text-slate-400 font-mono px-2 py-1 flex items-center gap-1 border border-slate-200 rounded-sm bg-slate-50"
+                              title="Primary executive role cannot be edited or deleted"
+                            >
+                              <Lock className="w-3 h-3 text-slate-400" />
+                              Protected
+                            </span>
                           )}
                           <Link
                             href={`/members`}
@@ -1061,17 +1088,35 @@ export default function RolesPage() {
               </div>
 
               {/* Form Buttons */}
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="orgos-btn orgos-btn--secondary"
-                >
-                  Cancel
-                </button>
-                <button type="submit" className="orgos-btn orgos-btn--primary">
-                  {editingRole ? "Save Role Updates" : "Create & Register Role"}
-                </button>
+              <div className="flex justify-between items-center pt-3 border-t border-slate-200 shrink-0">
+                {editingRole && editingRole.id !== "president" ? (
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const roleToDelete = editingRole;
+                      setIsAddModalOpen(false);
+                      setDeletingRole(roleToDelete);
+                    }}
+                    className="orgos-btn orgos-btn--danger text-xs flex items-center gap-1.5"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Role</span>
+                  </button>
+                ) : (
+                  <div /> 
+                )}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="orgos-btn orgos-btn--secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button type="submit" className="orgos-btn orgos-btn--primary">
+                    {editingRole ? "Save Role Updates" : "Create & Register Role"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -1079,7 +1124,7 @@ export default function RolesPage() {
       )}
 
       {/* 4. Delete Role Confirmation Modal */}
-      {deletingRole && (
+      {deletingRole && deletingRole.id !== "president" && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200"
           onClick={() => setDeletingRole(null)}
@@ -1094,7 +1139,7 @@ export default function RolesPage() {
             </div>
 
             <p className="text-xs text-slate-600 mb-4 leading-relaxed">
-              Are you sure you want to remove the custom role <strong>{deletingRole.name}</strong>? Any
+              Are you sure you want to remove the role <strong>{deletingRole.name}</strong>? Any
               members currently assigned this role will retain standard privileges based on their underlying
               tier ({deletingRole.baseTier}).
             </p>
