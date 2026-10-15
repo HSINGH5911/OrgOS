@@ -1,68 +1,70 @@
-"use client"
+"use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {                                                                                                                                                                                                  
-    FileText,                                                                                                                                                                                               
-    UploadCloud,                                                                                                                                                                                            
-    Search,                                                                                                                                                                                                 
-    Filter,                                                                                                                                                                                                 
-    Trash2,                                                                                                                                                                                                 
-    Download,                                                                                                                                                                                               
-    Eye,                                                                                                                                                                                                    
-    CheckCircle2,                                                                                                                                                                                           
-    AlertCircle,                                                                                                                                                                                            
-    Loader2,                                                                                                                                                                                                
-    Sparkles,                                                                                                                                                                                               
-    FolderArchive,                                                                                                                                                                                          
-    ArrowUpDown,                                                                                                                                                                                            
-    X,                                                                                                                                                                                                      
-    Plus,                                                                                                                                                                                                   
-    Clock,                                                                                                                                                                                                  
-    HardDrive,                                                                                                                                                                                              
-    FileSpreadsheet,                                                                                                                                                                                        
-    FileCode,                                                                                                                                                                                               
-    Calendar,                                                                                                                                                                                               
-    User,                                                                                                                                                                                                   
-    Shield,                                                                                                                                                                                                 
-    Building2,                                                                                                                                                                                              
-    ExternalLink,                                                                                                                                                                                           
+import {
+  FileText,
+  UploadCloud,
+  Search,
+  Filter,
+  Trash2,
+  Download,
+  Eye,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Sparkles,
+  FolderArchive,
+  ArrowUpDown,
+  X,
+  Plus,
+  Clock,
+  HardDrive,
+  FileSpreadsheet,
+  FileCode,
+  Calendar,
+  User,
+  Shield,
+  Building2,
+  ExternalLink,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "@/components/Sidebar";
 import UserDropdown from "@/components/UserDropdown";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-// Types + configs
+// ============================================================================
+// Types & Configuration
+// ============================================================================
 
-export type DocumentCategory = 
-    | "event_guide"
-    | "budget"
-    | "minutes"
-    | "contact_list"
-    | "general";
+export type DocumentCategory =
+  | "event_guide"
+  | "budget"
+  | "minutes"
+  | "contact_list"
+  | "general";
 
 export interface DocumentItem {
-    id: string;
-    org_id: string;
-    uploaded_by?: string;
-    uploader_name?: string;
-    title: string;
-    category: DocumentCategory;
-    file_path: string;
-    file_size_bytes: number;
-    mime_type: string;
-    summary?: string | null;
-    created_at: string;
-    is_indexed: boolean;
+  id: string;
+  org_id: string;
+  uploaded_by?: string;
+  uploader_name?: string;
+  title: string;
+  category: DocumentCategory;
+  file_path: string;
+  file_size_bytes: number;
+  mime_type: string;
+  summary?: string | null;
+  created_at: string;
+  is_indexed: boolean;
 }
 
 interface Organization {
-    id: string;
-    name: string;
-    slug: string;
-    university: string;
+  id: string;
+  name: string;
+  slug: string;
+  university: string;
 }
 
 const navigationItems = [
@@ -77,521 +79,544 @@ const navigationItems = [
 ];
 
 const CATEGORY_CONFIG: Record<
-    DocumentCategory,
-    { 
-        label: string;
-    }
-> ={
-    event_guide: {
-        label: "Event Guide"
-    },
-    budget: {
-        label: "Budget and Finance",
-    },
-    minutes: {
-        label: "Meeting Minutes",
-    },
-    contact_list: {
-        label: "Contact List",
-    },
-    general: {
-        label: "General"
-    },
+  DocumentCategory,
+  { label: string }
+> = {
+  event_guide: {
+    label: "Event Guide",
+  },
+  budget: {
+    label: "Budget & Finance",
+  },
+  minutes: {
+    label: "Meeting Minutes",
+  },
+  contact_list: {
+    label: "Contact List",
+  },
+  general: {
+    label: "General / Charter",
+  },
 };
 
-const INITIAL_SEED_DOCUMENTS: DocumentItem[] = [
-  {
-    id: "doc-seed-1",
-    org_id: "org-default",
-    uploader_name: "Executive Board",
-    title: "Diwali Night 2024 Event Playbook & Venue Checklist",
-    category: "event_guide",
-    file_path: "vault/diwali-2024-playbook.pdf",
-    file_size_bytes: 2450000,
-    mime_type: "application/pdf",
-    summary:
-      "Comprehensive breakdown of venue logistics, university safety compliance, sound system load-in, and catering vendor details for 450 attendees.",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
-    is_indexed: true,
-  },
-  {
-    id: "doc-seed-2",
-    org_id: "org-default",
-    uploader_name: "Treasurer",
-    title: "FY25 Student Government Budget Allocation & Expense Ledger",
-    category: "budget",
-    file_path: "vault/fy25-budget-allocation.xlsx",
-    file_size_bytes: 840000,
-    mime_type:
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    summary:
-      "Full approved university allocations, itemized reimbursements, and receipts tracking for fall semester programming.",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 25).toISOString(),
-    is_indexed: true,
-  },
-  {
-    id: "doc-seed-3",
-    org_id: "org-default",
-    uploader_name: "Secretary",
-    title: "Executive Board Meeting Minutes — September 2025",
-    category: "minutes",
-    file_path: "vault/exec-minutes-sept-2025.docx",
-    file_size_bytes: 420000,
-    mime_type:
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    summary:
-      "Discussion of recruitment week turnout, officer committee updates, and constitutional voting procedure revisions.",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 35).toISOString(),
-    is_indexed: true,
-  },
-  {
-    id: "doc-seed-4",
-    org_id: "org-default",
-    uploader_name: "President",
-    title: "Student Organization Official Constitution & Bylaws (Rev. 2025)",
-    category: "general",
-    file_path: "vault/org-constitution-2025.pdf",
-    file_size_bytes: 1120000,
-    mime_type: "application/pdf",
-    summary:
-      "Official governing charter ratified by the university student activities office, establishing officer responsibilities and election protocols.",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 90).toISOString(),
-    is_indexed: true,
-  },
-  {
-    id: "doc-seed-5",
-    org_id: "org-default",
-    uploader_name: "Campus Liaison",
-    title: "University Facilities, AV Staff & Approved Vendor Contact Directory",
-    category: "contact_list",
-    file_path: "vault/campus-partner-contacts.csv",
-    file_size_bytes: 145000,
-    mime_type: "text/csv",
-    summary:
-      "Direct email and extension list for student union room reservations, security clearance coordinators, and recurring catering contacts.",
-    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 4).toISOString(),
-    is_indexed: true,
-  },
-];
-
 function formatBytes(bytes: number, decimals = 1): string {
-    if (!bytes || bytes == 0) return "0 B";
+  if (!bytes || bytes === 0) return "0 B";
 
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 }
 
 function formatDate(isoString: string): string {
-    try {
-        const date = new Date(isoString);
-        return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-        });
-    } catch {
-        return "Recent"
-    }
+  try {
+    const date = new Date(isoString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  } catch {
+    return "Recent";
+  }
 }
 
 function getFileIcon(mimeType: string, path: string) {
-    const lower = (mimeType + " " + path).toLowerCase();
+  const lower = (mimeType + " " + path).toLowerCase();
 
-    if (lower.includes("pdf")) {
-        return <FileText className="w-5 h-5 text-emerald-600" />
-    }
+  if (lower.includes("pdf")) {
+    return <FileText className="w-5 h-5 text-red-600" />;
+  }
 
-    if (lower.includes("sheet") || lower.includes("excel") || lower.includes("csv") || lower.includes("xls")) {
-        return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-    }
+  if (
+    lower.includes("sheet") ||
+    lower.includes("excel") ||
+    lower.includes("csv") ||
+    lower.includes("xls")
+  ) {
+    return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />;
+  }
 
-    if (lower.includes("word") || lower.includes("doc") || lower.includes("text/plain")) {
-        return <FileText className="w-5 h-5 text-emerald-600" />
-    }
+  if (
+    lower.includes("word") ||
+    lower.includes("doc") ||
+    lower.includes("text/plain")
+  ) {
+    return <FileCode className="w-5 h-5 text-blue-600" />;
+  }
 
-    return <FileText className="w-5 h-5 text-[#1B365D]" />
+  return <FileText className="w-5 h-5 text-[#1B365D]" />;
 }
 
-// Main docs
 
+// Main Documents Vault Page Component
 export default function DocumentsPage() {
-    const router = useRouter();
+  const router = useRouter();
 
-    // nav and auth state
-    const [user, setUser] = useState<SupabaseUser | null>(null);
-    const [isAuthLoading, setIsAuthLoading] = useState(true);
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-    const [organization, setOrganization] = useState<Organization | null>(null);
-    const [currentUserRole, setCurrentUserRole] = useState<string>("member");
+  // Navigation & Auth State
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [organization, setOrganization] = useState<Organization | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string>("member");
 
-    // docs data state
-    const [documents, setDocuments] = useState<DocumentItem[]>([]);
-    const [isDataLoading, setIsDataLoading] = useState(true);
+  // Documents Data State (Starts empty: no fake/pre-seeded documents)
+  const [documents, setDocuments] = useState<DocumentItem[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
-    // search, filter, and sort state
-    const [searchQuery, setSearchQuery] = useState("")
-    const [selectedCategory, setSelectedCategory] = useState<string>("all");
-    const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "size">(
-        "newest"
-    );
+  // Search, Filter & Sort State
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "title" | "size">(
+    "newest"
+  );
 
-    // Notification State
-    const [notification, setNotification] = useState<{
-        type: "success" | "error";
-        message: string;
-    } | null>(null);
+  // Notification State
+  const [notification, setNotification] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
-    // Modals State
-    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    const [viewingDocument, setViewingDocument] = useState<DocumentItem | null>(null);
-    const [deletingDocument, setDeletingDocument] = useState<DocumentItem | null>(null);
+  // Modals State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<DocumentItem | null>(null);
+  const [documentUrl, setDocumentUrl] = useState<string | null>(null);
+  const [deletingDocument, setDeletingDocument] = useState<DocumentItem | null>(null);
 
-    // Upload Form State
-    const [uploadFile, setUploadFile] = useState<File | null>(null);
-    const [uploadTitle, setUploadTitle] = useState("");
-    const [uploadCategory, setUploadCategory] =
-        useState<DocumentCategory>("general");
-    const [uploadSummary, setUploadSummary] = useState("");
-    const [isSubmittingUpload, setIsSubmittingUpload] = useState(false);
-    const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
+  // Upload Form State
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadCategory, setUploadCategory] =
+    useState<DocumentCategory>("general");
+  const [uploadSummary, setUploadSummary] = useState("");
+  const [isSubmittingUpload, setIsSubmittingUpload] = useState(false);
+  const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const localFileUrls = useRef<Map<string, string>>(new Map());
 
-    const showToast = useCallback(
-        (type: "success" | "error", message: string) => {
-        setNotification({ type, message });
-        const timer = setTimeout(() => setNotification(null), 4000);
-        return () => clearTimeout(timer);
-        },
-        []
-    );
+  const showToast = useCallback(
+    (type: "success" | "error", message: string) => {
+      setNotification({ type, message });
+      const timer = setTimeout(() => setNotification(null), 4000);
+      return () => clearTimeout(timer);
+    },
+    []
+  );
 
-    // Load Organization & Vault Documents
-    const loadDocuments = useCallback(
-        async (activeUser: SupabaseUser, orgId?: string) => {
-        setIsDataLoading(true);
-        try {
-            const supabase = createClient();
-
-            let targetOrgId = orgId;
-            if (!targetOrgId) {
-            const { data: myMembership } = await supabase
-                .from("org_memberships")
-                .select(`
-                role,
-                org_id,
-                organizations (
-                    id,
-                    name,
-                    slug,
-                    university
-                )
-                `)
-                .eq("user_id", activeUser.id)
-                .eq("is_active", true)
-                .maybeSingle();
-
-            if (myMembership && myMembership.organizations) {
-                const rawOrg = Array.isArray(myMembership.organizations)
-                ? myMembership.organizations[0]
-                : myMembership.organizations;
-                const org = rawOrg as Organization;
-                setOrganization(org);
-                targetOrgId = org.id;
-                setCurrentUserRole(myMembership.role || "member");
-            } else {
-                const meta = activeUser.user_metadata || {};
-                const fallbackOrg: Organization = {
-                id: "org-default",
-                name: meta.organization || "Collegiate Student Organization",
-                slug: (meta.organization || "student-org")
-                    .toLowerCase()
-                    .replace(/[^a-z0-9]+/g, "-"),
-                university: meta.university || "Main Campus",
-                };
-                setOrganization(fallbackOrg);
-                targetOrgId = fallbackOrg.id;
-                setCurrentUserRole(meta.role || "president");
-            }
-            }
-
-            const { data: dbDocs, error: dbError } = await supabase
-            .from("documents")
-            .select("*")
-            .eq("org_id", targetOrgId)
-            .order("created_at", { ascending: false });
-
-            if (!dbError && dbDocs && dbDocs.length > 0) {
-            const formatted: DocumentItem[] = dbDocs.map((item: any) => ({
-                id: item.id,
-                org_id: item.org_id,
-                uploaded_by: item.uploaded_by,
-                uploader_name: item.uploader_name || "Officer",
-                title: item.title,
-                category: item.category as DocumentCategory,
-                file_path: item.file_path,
-                file_size_bytes: item.file_size_bytes || 0,
-                mime_type: item.mime_type || "application/octet-stream",
-                summary: item.summary,
-                created_at: item.created_at,
-                is_indexed: true,
-            }));
-            setDocuments(formatted);
-            localStorage.setItem(
-                `orgos_docs_${targetOrgId}`,
-                JSON.stringify(formatted)
-            );
-            } else {
-            const cached = localStorage.getItem(`orgos_docs_${targetOrgId}`);
-            if (cached) {
-                try {
-                setDocuments(JSON.parse(cached));
-                } catch {
-                setDocuments(INITIAL_SEED_DOCUMENTS);
-                }
-            } else {
-                setDocuments(INITIAL_SEED_DOCUMENTS);
-                localStorage.setItem(
-                `orgos_docs_${targetOrgId}`,
-                JSON.stringify(INITIAL_SEED_DOCUMENTS)
-                );
-            }
-            }
-        } catch (err) {
-            console.warn("Using offline document vault store:", err);
-            setDocuments(INITIAL_SEED_DOCUMENTS);
-        } finally {
-            setIsDataLoading(false);
-        }
-        },
-        []
-    );
-
-    // Authenticate User on Mount
-    useEffect(() => {
-        let isMounted = true;
+  // Load Organization & Vault Documents
+  const loadDocuments = useCallback(
+    async (activeUser: SupabaseUser, orgId?: string) => {
+      setIsDataLoading(true);
+      try {
         const supabase = createClient();
 
-        supabase.auth.getUser().then(({ data: { user } }) => {
-        if (!isMounted) return;
-        setUser(user);
-        setIsAuthLoading(false);
-        if (user) {
-            loadDocuments(user);
-        }
-        });
+        let targetOrgId = orgId;
+        if (!targetOrgId) {
+          const { data: myMembership } = await supabase
+            .from("org_memberships")
+            .select(`
+              role,
+              org_id,
+              organizations (
+                id,
+                name,
+                slug,
+                university
+              )
+            `)
+            .eq("user_id", activeUser.id)
+            .eq("is_active", true)
+            .maybeSingle();
 
-        const {
-        data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => {
-        if (!isMounted) return;
-        setUser(session?.user ?? null);
-        setIsAuthLoading(false);
-        if (session?.user) {
-            loadDocuments(session.user);
-        }
-        });
-
-        return () => {
-        isMounted = false;
-        subscription.unsubscribe();
-        };
-    }, [loadDocuments]);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-        const file = e.target.files[0];
-        setUploadFile(file);
-        if (!uploadTitle) {
-            const cleanName = file.name.replace(/\.[^/.]+$/, "");
-            setUploadTitle(cleanName);
-        }
-        }
-    };
-
-    const handleUploadSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!uploadFile || !uploadTitle.trim()) {
-        showToast("error", "Please provide a document file and title.");
-        return;
+          if (myMembership && myMembership.organizations) {
+            const rawOrg = Array.isArray(myMembership.organizations)
+              ? myMembership.organizations[0]
+              : myMembership.organizations;
+            const org = rawOrg as Organization;
+            setOrganization(org);
+            targetOrgId = org.id;
+            setCurrentUserRole(myMembership.role || "member");
+          } else {
+            const meta = activeUser.user_metadata || {};
+            const fallbackOrg: Organization = {
+              id: "org-default",
+              name: meta.organization || "Collegiate Student Organization",
+              slug: (meta.organization || "student-org")
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, "-"),
+              university: meta.university || "Main Campus",
+            };
+            setOrganization(fallbackOrg);
+            targetOrgId = fallbackOrg.id;
+            setCurrentUserRole(meta.role || "president");
+          }
         }
 
-        setIsSubmittingUpload(true);
-        const activeOrgId = organization?.id || "org-default";
-        const uploaderName =
-        user?.user_metadata?.full_name ||
-        user?.user_metadata?.name ||
-        user?.email?.split("@")[0] ||
-        "Officer";
+        // Query Supabase documents table
+        let query = supabase
+          .from("documents")
+          .select("*")
+          .order("created_at", { ascending: false });
 
-        try {
-        const supabase = createClient();
-        const fileExt = uploadFile.name.split(".").pop();
-        const storageKey = `vault/${activeOrgId}/${Date.now()}_${uploadFile.name}`;
-
-        try {
-            await supabase.storage
-            .from("org-documents")
-            .upload(storageKey, uploadFile, { upsert: true });
-        } catch (storageErr) {
-            console.warn("Storage bucket skipped/unconfigured:", storageErr);
+        if (
+          targetOrgId &&
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            targetOrgId
+          )
+        ) {
+          query = query.eq("org_id", targetOrgId);
         }
 
-        const newDoc: DocumentItem = {
-            id: "doc-" + Date.now(),
-            org_id: activeOrgId,
-            uploaded_by: user?.id,
-            uploader_name: uploaderName,
-            title: uploadTitle.trim(),
-            category: uploadCategory,
-            file_path: storageKey,
-            file_size_bytes: uploadFile.size,
-            mime_type: uploadFile.type || `application/${fileExt || "octet-stream"}`,
-            summary: uploadSummary.trim() || "Uploaded to organizational vault.",
-            created_at: new Date().toISOString(),
+        const { data: dbDocs, error: dbError } = await query;
+
+        if (!dbError && dbDocs && dbDocs.length > 0) {
+          const formatted: DocumentItem[] = dbDocs.map((item: any) => ({
+            id: item.id,
+            org_id: item.org_id,
+            uploaded_by: item.uploaded_by,
+            uploader_name: item.uploader_name || "Officer",
+            title: item.title,
+            category: item.category as DocumentCategory,
+            file_path: item.file_path,
+            file_size_bytes: item.file_size_bytes || 0,
+            mime_type: item.mime_type || "application/octet-stream",
+            summary: item.summary,
+            created_at: item.created_at,
             is_indexed: true,
-        };
-
-        try {
-            await supabase.from("documents").insert({
-            id: newDoc.id,
-            org_id: activeOrgId,
-            uploaded_by: user?.id,
-            title: newDoc.title,
-            category: newDoc.category,
-            file_path: newDoc.file_path,
-            file_size_bytes: newDoc.file_size_bytes,
-            mime_type: newDoc.mime_type,
-            summary: newDoc.summary,
-            });
-        } catch (dbErr) {
-            console.warn("Supabase database insert skipped:", dbErr);
+          }));
+          setDocuments(formatted);
+        } else {
+          // No fallback data: if no documents exist in database, state strictly empty
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.removeItem(`orgos_docs_${targetOrgId}`);
+            } catch {}
+          }
+          setDocuments([]);
         }
+      } catch (err) {
+        console.warn("No documents in vault:", err);
+        setDocuments([]);
+      } finally {
+        setIsDataLoading(false);
+      }
+    },
+    []
+  );
 
-        const updatedDocs = [newDoc, ...documents];
-        setDocuments(updatedDocs);
-        localStorage.setItem(
-            `orgos_docs_${activeOrgId}`,
-            JSON.stringify(updatedDocs)
+  // Authenticate User on Mount
+  useEffect(() => {
+    let isMounted = true;
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!isMounted) return;
+      setUser(user);
+      setIsAuthLoading(false);
+      if (user) {
+        loadDocuments(user);
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+      setUser(session?.user ?? null);
+      setIsAuthLoading(false);
+      if (session?.user) {
+        loadDocuments(session.user);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [loadDocuments]);
+
+  // Load document preview URL when viewing a document
+  useEffect(() => {
+    if (!viewingDocument) {
+      setDocumentUrl(null);
+      return;
+    }
+
+    // Check if we have a local object URL from this session
+    if (localFileUrls.current.has(viewingDocument.file_path)) {
+      setDocumentUrl(localFileUrls.current.get(viewingDocument.file_path) || null);
+      return;
+    }
+
+    const supabase = createClient();
+    supabase.storage
+      .from("org-documents")
+      .createSignedUrl(viewingDocument.file_path, 3600)
+      .then(({ data, error }) => {
+        if (!error && data?.signedUrl) {
+          setDocumentUrl(data.signedUrl);
+        } else {
+          const { data: pubData } = supabase.storage
+            .from("org-documents")
+            .getPublicUrl(viewingDocument.file_path);
+
+          if (pubData?.publicUrl) {
+            fetch(pubData.publicUrl, { method: "HEAD" })
+              .then((res) => {
+                if (res.ok) {
+                  setDocumentUrl(pubData.publicUrl);
+                } else {
+                  setDocumentUrl(null);
+                }
+              })
+              .catch(() => setDocumentUrl(null));
+          } else {
+            setDocumentUrl(null);
+          }
+        }
+      })
+      .catch(() => {
+        setDocumentUrl(null);
+      });
+  }, [viewingDocument]);
+
+  // Handle File Selection for Upload
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadFile(file);
+      if (!uploadTitle) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, "");
+        setUploadTitle(cleanName);
+      }
+    }
+  };
+
+  // Handle Upload Submission
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadFile || !uploadTitle.trim()) {
+      showToast("error", "Please provide a document file and title.");
+      return;
+    }
+
+    setIsSubmittingUpload(true);
+    const activeOrgId = organization?.id || "org-default";
+    const uploaderName =
+      user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.email?.split("@")[0] ||
+      "Officer";
+
+    try {
+      const supabase = createClient();
+      const fileExt = uploadFile.name.split(".").pop();
+      const storageKey = `vault/${activeOrgId}/${Date.now()}_${uploadFile.name}`;
+
+      // Cache local blob URL for instant previewing in this session
+      try {
+        const localBlob = URL.createObjectURL(uploadFile);
+        localFileUrls.current.set(storageKey, localBlob);
+      } catch {}
+
+      try {
+        await supabase.storage
+          .from("org-documents")
+          .upload(storageKey, uploadFile, { upsert: true });
+      } catch (storageErr) {
+        console.warn("Storage bucket skipped/unconfigured:", storageErr);
+      }
+
+      const isUuid = (val?: string | null) =>
+        Boolean(
+          val &&
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              val
+            )
         );
 
-        showToast("success", `"${newDoc.title}" successfully vaulted & indexed.`);
-        setIsUploadModalOpen(false);
+      const docId = crypto.randomUUID();
+      const orgUuid = isUuid(activeOrgId) ? activeOrgId : null;
+      const userUuid = isUuid(user?.id) ? user?.id : null;
 
-        setUploadFile(null);
-        setUploadTitle("");
-        setUploadCategory("general");
-        setUploadSummary("");
-        if (fileInputRef.current) fileInputRef.current.value = "";
-        } catch (err: any) {
-        console.error("Upload error:", err);
-        showToast("error", err.message || "Failed to upload document.");
-        } finally {
+      const newDoc: DocumentItem = {
+        id: docId,
+        org_id: activeOrgId,
+        uploaded_by: user?.id,
+        uploader_name: uploaderName,
+        title: uploadTitle.trim(),
+        category: uploadCategory,
+        file_path: storageKey,
+        file_size_bytes: uploadFile.size,
+        mime_type: uploadFile.type || `application/${fileExt || "octet-stream"}`,
+        summary: uploadSummary.trim() || "Uploaded to organizational vault.",
+        created_at: new Date().toISOString(),
+        is_indexed: true,
+      };
+
+      let verifiedUserUuid: string | null = null;
+      if (userUuid) {
+        const { data: profileRow } = await supabase
+          .from("profiles")
+          .select("id")
+          .eq("id", userUuid)
+          .maybeSingle();
+        if (profileRow?.id) {
+          verifiedUserUuid = profileRow.id;
+        }
+      }
+
+      let verifiedOrgUuid: string | null = null;
+      if (orgUuid) {
+        const { data: orgRow } = await supabase
+          .from("organizations")
+          .select("id")
+          .eq("id", orgUuid)
+          .maybeSingle();
+        if (orgRow?.id) {
+          verifiedOrgUuid = orgRow.id;
+        }
+      }
+
+      const { error: insertError } = await supabase.from("documents").insert({
+        id: docId,
+        org_id: verifiedOrgUuid,
+        uploaded_by: verifiedUserUuid,
+        uploader_name: uploaderName,
+        title: newDoc.title,
+        category: newDoc.category,
+        file_path: newDoc.file_path,
+        file_size_bytes: newDoc.file_size_bytes,
+        mime_type: newDoc.mime_type,
+        summary: newDoc.summary,
+      });
+
+      if (insertError) {
+        console.error("Database insert error:", insertError);
+        showToast("error", "Database save error: " + insertError.message);
         setIsSubmittingUpload(false);
+        return;
+      }
+
+      const updatedDocs = [newDoc, ...documents];
+      setDocuments(updatedDocs);
+
+      showToast("success", `"${newDoc.title}" successfully vaulted & indexed.`);
+      setIsUploadModalOpen(false);
+
+      setUploadFile(null);
+      setUploadTitle("");
+      setUploadCategory("general");
+      setUploadSummary("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      showToast("error", err.message || "Failed to upload document.");
+    } finally {
+      setIsSubmittingUpload(false);
+    }
+  };
+
+  // Handle Document Deletion
+  const handleDeleteDocument = async () => {
+    if (!deletingDocument) return;
+
+    setIsSubmittingDelete(true);
+    const activeOrgId = organization?.id || "org-default";
+
+    try {
+      const supabase = createClient();
+
+      try {
+        await supabase
+          .from("documents")
+          .delete()
+          .eq("id", deletingDocument.id);
+      } catch (dbErr) {
+        console.warn("Supabase delete skipped:", dbErr);
+      }
+
+      const updatedDocs = documents.filter((d) => d.id !== deletingDocument.id);
+      setDocuments(updatedDocs);
+
+      showToast(
+        "success",
+        `"${deletingDocument.title}" removed from the vault.`
+      );
+      setDeletingDocument(null);
+      if (viewingDocument?.id === deletingDocument.id) {
+        setViewingDocument(null);
+      }
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      showToast("error", "Failed to delete document.");
+    } finally {
+      setIsSubmittingDelete(false);
+    }
+  };
+
+  // Handle Download Simulation
+  const handleDownload = (doc: DocumentItem) => {
+    const dummyContent = `=== OrgOS Document Export ===\nTitle: ${doc.title}\nCategory: ${doc.category}\nUploaded By: ${doc.uploader_name || "Officer"}\nDate: ${doc.created_at}\n\nSummary / Historical Record:\n${doc.summary || "No description provided."}\n\n[Vault Reference Path: ${doc.file_path}]`;
+    const blob = new Blob([dummyContent], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast("success", `Downloading "${doc.title}"...`);
+  };
+
+  // Filter & Sort Calculation
+  const filteredDocuments = useMemo(() => {
+    return documents
+      .filter((doc) => {
+        const matchesCategory =
+          selectedCategory === "all" || doc.category === selectedCategory;
+        const q = searchQuery.toLowerCase().trim();
+        const matchesQuery =
+          !q ||
+          doc.title.toLowerCase().includes(q) ||
+          (doc.summary && doc.summary.toLowerCase().includes(q)) ||
+          doc.category.toLowerCase().includes(q);
+        return matchesCategory && matchesQuery;
+      })
+      .sort((a, b) => {
+        if (sortBy === "newest") {
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
         }
-    };
-
-    const handleDeleteDocument = async () => {
-        if (!deletingDocument) return;
-
-        setIsSubmittingDelete(true);
-        const activeOrgId = organization?.id || "org-default";
-
-        try {
-        const supabase = createClient();
-
-        try {
-            await supabase
-            .from("documents")
-            .delete()
-            .eq("id", deletingDocument.id);
-        } catch (dbErr) {
-            console.warn("Supabase delete skipped:", dbErr);
+        if (sortBy === "oldest") {
+          return (
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
         }
-
-        const updatedDocs = documents.filter((d) => d.id !== deletingDocument.id);
-        setDocuments(updatedDocs);
-        localStorage.setItem(
-            `orgos_docs_${activeOrgId}`,
-            JSON.stringify(updatedDocs)
-        );
-
-        showToast(
-            "success",
-            `"${deletingDocument.title}" removed from the vault.`
-        );
-        setDeletingDocument(null);
-        if (viewingDocument?.id === deletingDocument.id) {
-            setViewingDocument(null);
+        if (sortBy === "title") {
+          return a.title.localeCompare(b.title);
         }
-        } catch (err: any) {
-        console.error("Delete error:", err);
-        showToast("error", "Failed to delete document.");
-        } finally {
-        setIsSubmittingDelete(false);
+        if (sortBy === "size") {
+          return b.file_size_bytes - a.file_size_bytes;
         }
-    };
+        return 0;
+      });
+  }, [documents, selectedCategory, searchQuery, sortBy]);
 
-    const handleDownload = (doc: DocumentItem) => {
-        const dummyContent = `=== OrgOS Document Export ===\nTitle: ${doc.title}\nCategory: ${doc.category}\nUploaded By: ${doc.uploader_name || "Officer"}\nDate: ${doc.created_at}\n\nSummary / Historical Record:\n${doc.summary || "No description provided."}\n\n[Vault Reference Path: ${doc.file_path}]`;
-        const blob = new Blob([dummyContent], { type: "text/plain" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${doc.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.txt`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast("success", `Downloading "${doc.title}"...`);
-    };
+  // Aggregate Vault Metrics
+  const totalStorageBytes = useMemo(() => {
+    return documents.reduce((acc, d) => acc + (d.file_size_bytes || 0), 0);
+  }, [documents]);
 
-    const filteredDocuments = useMemo(() => {
-        return documents
-        .filter((doc) => {
-            const matchesCategory =
-            selectedCategory === "all" || doc.category === selectedCategory;
-            const q = searchQuery.toLowerCase().trim();
-            const matchesQuery =
-            !q ||
-            doc.title.toLowerCase().includes(q) ||
-            (doc.summary && doc.summary.toLowerCase().includes(q)) ||
-            doc.category.toLowerCase().includes(q);
-            return matchesCategory && matchesQuery;
-        })
-        .sort((a, b) => {
-            if (sortBy === "newest") {
-            return (
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-            );
-            }
-            if (sortBy === "oldest") {
-            return (
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-            );
-            }
-            if (sortBy === "title") {
-            return a.title.localeCompare(b.title);
-            }
-            if (sortBy === "size") {
-            return b.file_size_bytes - a.file_size_bytes;
-            }
-            return 0;
-        });
-    }, [documents, selectedCategory, searchQuery, sortBy]);
+  const indexedCount = useMemo(() => {
+    return documents.filter((d) => d.is_indexed).length;
+  }, [documents]);
 
-    const totalStorageBytes = useMemo(() => {
-        return documents.reduce((acc, d) => acc + (d.file_size_bytes || 0), 0);
-    }, [documents]);
-
-    const indexedCount = useMemo(() => {
-        return documents.filter((d) => d.is_indexed).length;
-    }, [documents]);
-
-    return (
+  return (
     <div className="min-h-screen bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] selection:bg-[#1B365D] selection:text-white flex">
       {/* 1. Left Navigation Sidebar */}
       {user && (
@@ -745,9 +770,13 @@ export default function DocumentsPage() {
             <div className="p-4 bg-white border border-slate-200 rounded-sm shadow-xs">
               <span className="orgos-meta-label">Vector Status</span>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="h-2 w-2 rounded-full bg-emerald-500"></span>
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    documents.length > 0 ? "bg-emerald-500" : "bg-slate-300"
+                  }`}
+                ></span>
                 <span className="text-xs font-semibold text-slate-800">
-                  pgvector Pipeline Active
+                  {documents.length > 0 ? "pgvector Pipeline Active" : "Ready for Ingestion"}
                 </span>
               </div>
             </div>
@@ -829,7 +858,7 @@ export default function DocumentsPage() {
             </div>
           </div>
 
-          {/* Documents Table */}
+          {/* Documents Table or "No Documents" State */}
           {isDataLoading ? (
             <div className="py-20 flex flex-col items-center justify-center text-slate-400 bg-white border border-slate-200 rounded-sm">
               <Loader2 className="w-6 h-6 animate-spin text-[#1B365D] mb-2" />
@@ -838,42 +867,70 @@ export default function DocumentsPage() {
               </p>
             </div>
           ) : filteredDocuments.length === 0 ? (
-            <div className="py-16 text-center bg-white border border-slate-200 rounded-sm p-8">
+            /* ============================================================= */
+            /* "NO DOCUMENTS" EMPTY STATE                                    */
+            /* ============================================================= */
+            <div className="py-16 text-center bg-white border border-slate-200 rounded-sm p-8 shadow-xs">
               <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-3 text-slate-400">
                 <FolderArchive className="w-6 h-6" />
               </div>
-              <h3 className="text-sm font-semibold text-slate-800">
-                No documents found
-              </h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                {searchQuery || selectedCategory !== "all"
-                  ? "No files match your search criteria. Try resetting filters."
-                  : "Your organization vault is empty. Upload past event guides, budgets, or meeting minutes to get started."}
-              </p>
-              <div className="mt-4 flex items-center justify-center gap-3">
-                {(searchQuery || selectedCategory !== "all") && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setSelectedCategory("all");
-                    }}
-                    className="orgos-btn orgos-btn--secondary text-xs h-8"
-                  >
-                    Clear Filters
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setIsUploadModalOpen(true)}
-                  className="orgos-btn orgos-btn--primary text-xs h-8"
-                >
-                  <UploadCloud className="w-3.5 h-3.5" />
-                  <span>Upload First File</span>
-                </button>
-              </div>
+
+              {documents.length === 0 ? (
+                // 1. Vault is completely empty
+                <>
+                  <h3 className="text-base font-bold text-slate-800">
+                    No documents
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    There are no documents in your organization&apos;s vault yet.
+                    Upload past event guides, budgets, charters, or meeting
+                    minutes to begin training the AI Copilot.
+                  </p>
+                  <div className="mt-5 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="orgos-btn orgos-btn--primary text-xs h-9 shadow-sm"
+                    >
+                      <UploadCloud className="w-4 h-4" />
+                      <span>Upload Document</span>
+                    </button>
+                  </div>
+                </>
+              ) : (
+                // 2. Vault has files, but current search / filter returned 0
+                <>
+                  <h3 className="text-base font-bold text-slate-800">
+                    No documents found
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                    No files match your search query or selected category filter.
+                  </p>
+                  <div className="mt-5 flex items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery("");
+                        setSelectedCategory("all");
+                      }}
+                      className="orgos-btn orgos-btn--secondary text-xs h-8"
+                    >
+                      Clear Filters
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="orgos-btn orgos-btn--primary text-xs h-8"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5" />
+                      <span>Upload Document</span>
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
+            /* Table when documents exist */
             <div className="orgos-table-wrapper overflow-x-auto">
               <table className="orgos-table">
                 <thead>
@@ -1165,105 +1222,158 @@ export default function DocumentsPage() {
       {/* MODAL 2: Document Details & Inspector Modal */}
       {/* ==================================================================== */}
       {viewingDocument && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-sm shadow-xl max-w-lg w-full overflow-hidden">
-            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4 text-[#1B365D]" />
-                <h3 className="text-sm font-bold text-[#1B365D]">
-                  Document Metadata
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-sm shadow-xl max-w-5xl w-full h-[85vh] flex flex-col overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <Eye className="w-4 h-4 text-[#1B365D] shrink-0" />
+                <h3 className="text-sm font-bold text-[#1B365D] truncate">
+                  {viewingDocument.title}
                 </h3>
               </div>
-              <button
-                type="button"
-                onClick={() => setViewingDocument(null)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="p-5 space-y-4">
-              <div>
-                <h4 className="text-sm font-bold text-slate-900">
-                  {viewingDocument.title}
-                </h4>
-                <div className="flex items-center gap-2 mt-1">
-                </div>
-              </div>
-
-              <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-xs text-slate-700">
-                <span className="font-semibold text-slate-800 block mb-1">
-                  AI Context Summary
-                </span>
-                <p className="leading-relaxed">
-                  {viewingDocument.summary ||
-                    "No AI context summary provided for this document."}
-                </p>
-              </div>
-
-              <div className="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Vault Path:</span>
-                  <span className="font-mono text-slate-700">
-                    {viewingDocument.file_path}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">MIME Format:</span>
-                  <span className="font-mono text-slate-700">
-                    {viewingDocument.mime_type}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Uploaded By:</span>
-                  <span className="text-slate-800 font-medium">
-                    {viewingDocument.uploader_name || "Officer"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Ingested Date:</span>
-                  <span className="text-slate-800">
-                    {formatDate(viewingDocument.created_at)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-400">Copilot Vector Status:</span>
-                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Embedded & Searchable
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-2 shrink-0">
+                {documentUrl && (
+                  <a
+                    href={documentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="orgos-btn orgos-btn--secondary text-xs h-7 px-2"
+                  >
+                    Open in new tab
+                  </a>
+                )}
                 <button
                   type="button"
-                  onClick={() => {
-                    setDeletingDocument(viewingDocument);
-                    setViewingDocument(null);
-                  }}
-                  className="text-xs font-medium text-red-600 hover:text-red-700 flex items-center gap-1"
+                  onClick={() => setViewingDocument(null)}
+                  className="text-slate-400 hover:text-slate-600 p-1"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Delete File</span>
+                  <X className="w-4 h-4" />
                 </button>
+              </div>
+            </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setViewingDocument(null)}
-                    className="orgos-btn orgos-btn--secondary text-xs h-8"
-                  >
-                    Close
-                  </button>
+            <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+              {/* Document Viewing Area */}
+              <div className="flex-1 bg-slate-100 p-2 flex flex-col border-b md:border-b-0 md:border-r border-slate-200 min-h-0">
+                {documentUrl ? (
+                  viewingDocument.mime_type.startsWith("image/") ? (
+                    <div className="flex-1 flex items-center justify-center overflow-auto p-4 bg-white rounded-sm">
+                      <img
+                        src={documentUrl}
+                        alt={viewingDocument.title}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                  ) : viewingDocument.mime_type === "application/pdf" ? (
+                    <iframe
+                      src={`${documentUrl}#toolbar=1`}
+                      title={viewingDocument.title}
+                      className="w-full h-full flex-1 border-0 rounded-sm bg-white"
+                    />
+                  ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white rounded-sm text-center">
+                      <p className="text-xs font-semibold text-slate-800 mb-2">
+                        Preview not directly embeddable for {viewingDocument.mime_type}
+                      </p>
+                      <a
+                        href={documentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="orgos-btn orgos-btn--primary text-xs h-8"
+                      >
+                        Open File in Browser
+                      </a>
+                    </div>
+                  )
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 bg-white rounded-sm text-center">
+                    <p className="text-xs font-semibold text-slate-800 mb-1">
+                      Document preview not available
+                    </p>
+                    <p className="text-xs text-slate-500 max-w-sm mb-4">
+                      This file is recorded in your metadata vault, but the raw file has not yet been uploaded to cloud storage.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleDownload(viewingDocument)}
+                      className="orgos-btn orgos-btn--secondary text-xs h-8"
+                    >
+                      Download Text Record
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Document Metadata Sidebar */}
+              <div className="w-full md:w-80 p-4 space-y-4 overflow-y-auto shrink-0 bg-white">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900">
+                    {viewingDocument.title}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded border bg-slate-50 text-slate-700">
+                      {CATEGORY_CONFIG[viewingDocument.category]?.label || "General"}
+                    </span>
+                    <span className="text-xs font-mono text-slate-500">
+                      {formatBytes(viewingDocument.file_size_bytes)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-xs text-slate-700">
+                  <span className="font-semibold text-slate-800 block mb-1">
+                    Summary
+                  </span>
+                  <p className="leading-relaxed">
+                    {viewingDocument.summary || "No description provided."}
+                  </p>
+                </div>
+
+                <div className="space-y-1.5 text-xs text-slate-600 border-t border-slate-100 pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Vault Path:</span>
+                    <span className="font-mono text-slate-700 truncate max-w-[150px]">
+                      {viewingDocument.file_path}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Format:</span>
+                    <span className="font-mono text-slate-700">
+                      {viewingDocument.mime_type}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Uploaded By:</span>
+                    <span className="text-slate-800 font-medium">
+                      {viewingDocument.uploader_name || "Officer"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Date:</span>
+                    <span className="text-slate-800">
+                      {formatDate(viewingDocument.created_at)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 flex flex-col gap-2">
                   <button
                     type="button"
                     onClick={() => handleDownload(viewingDocument)}
-                    className="orgos-btn orgos-btn--primary text-xs h-8"
+                    className="orgos-btn orgos-btn--primary text-xs h-8 w-full"
                   >
                     <Download className="w-3.5 h-3.5" />
                     <span>Download</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeletingDocument(viewingDocument);
+                      setViewingDocument(null);
+                    }}
+                    className="text-xs font-medium text-red-600 hover:text-red-700 py-1 text-center"
+                  >
+                    Delete File
                   </button>
                 </div>
               </div>
