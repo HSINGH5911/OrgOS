@@ -1,0 +1,312 @@
+/**
+ * OrgOS Operations Design System - Core Stylesheet
+ * Utilitarian, accessible, and high-density styling for student organization operations.
+ * Free of vibe-coding glows, neon gradients, and nested card bloat.
+ */
+
+:root {
+  /* ==========================================================================
+     1. COLOR TOKENS
+     ========================================================================== */
+  /* Brand Navy */
+  --orgos-primary: #1B365D;
+  --orgos-primary-hover: #142847;
+  --orgos-primary-subtle: #EBF1F8;
+  --orgos-primary-border: #C8D8E9;
+
+  /* Functional Status Accents */
+  --orgos-success: #0F9D58;
+  --orgos-success-hover: #0B7C44;
+  --orgos-success-bg: #E8F5E9;
+  --orgos-success-border: #A3D9B5;
+
+  --orgos-warning: #D97706;
+  --orgos-warning-bg: #FEF3C7;
+  --orgos-warning-border: #FCD34D;
+
+  --orgos-danger: #DC2626;
+  --orgos-danger-bg: #FEE2E2;
+  --orgos-danger-border: #FCA5A5;
+
+  /* Slate Neutrals & Surfaces */
+  --orgos-bg-app: #F8FAFC;
+  --orgos-bg-surface: #FFFFFF;
+  --orgos-bg-surface-dim: #F1F5F9;
+  --orgos-bg-sidebar: #FFFFFF;
+  --orgos-bg-sidebar-active: #1B365D;
+  --orgos-bg-sidebar-hover: #F1F5F9;
+
+  /* Structural Borders */
+  --orgos-border-light: #E2E8F0;
+  --orgos-border-medium: #CBD5E1;
+  --orgos-border-dark: #94A3B8;
+
+  /* Typography */
+  --orgos-text-primary: #0F172A;
+  --orgos-text-secondary: #475569;
+  --orgos-text-tertiary: #94A3B8;
+  --orgos-text-inverse: #FFFFFF;
+  --orgos-text-sidebar: #475569;
+  --orgos-text-sidebar-active: #1B365D;
+
+  /* ==========================================================================
+     2. TYPOGRAPHY SCALE
+     ========================================================================== */
+  --orgos-font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --orgos-font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+
+  --orgos-fs-h1: 24px;
+  --orgos-fs-h2: 16px;
+  --orgos-fs-body: 14px;
+  --orgos-fs-data: 13px;
+  --orgos-fs-caption: 12px;
+  --orgos-fs-micro: 11px;
+
+  /* ==========================================================================
+     3. 8PX SPACING GRID & RADII
+     ========================================================================== */
+  --orgos-space-1: 8px;
+  --orgos-space-2: 16px;
+  --orgos-space-3: 24px;
+  --orgos-space-4: 32px;
+  --orgos-space-6: 48px;
+
+  --orgos-radius-sm: 4px;
+  --orgos-radius-md: 6px;
+  --orgos-radius-full: 9999px;
+
+  --orgos-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --orgos-shadow-md: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* ==========================================================================
+   4. BASE & RESET
+   ========================================================================== */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--orgos-font-sans);
+  background-color: var(--orgos-bg-app);
+  color: var(--orgos-text-primary);
+  font-size: var(--orgos-fs-body);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================================
+   5. LAYOUT UTILITIES
+   ========================================================================== */
+.orgos-app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.orgos-sidebar {
+  width: 260px;
+  background-color: var(--orgos-bg-sidebar);
+  color: var(--orgos-text-sidebar);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--orgos-border-light);
+}
+
+.orgos-main-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background-color: var(--orgos-bg-app);
+}
+
+.orgos-topbar {
+  height: 52px;
+  background-color: var(--orgos-bg-surface);
+  border-bottom: 1px solid var(--orgos-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--orgos-space-3);
+}
+
+.orgos-content-body {
+  padding: var(--orgos-space-3);
+  max-width: 1440px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   6. ATOMIC COMPONENTS
+   ========================================================================== */
+
+/* Typography */
+.orgos-title-h1 {
+  font-size: var(--orgos-fs-h1);
+  font-weight: 700;
+  color: var(--orgos-primary);
+  margin: 0 0 var(--orgos-space-1) 0;
+  letter-spacing: -0.015em;
+}
+
+.orgos-title-h2 {
+  font-size: var(--orgos-fs-h2);
+  font-weight: 600;
+  color: var(--orgos-text-primary);
+  margin: 0;
+}
+
+.orgos-text-secondary {
+  color: var(--orgos-text-secondary);
+  font-size: var(--orgos-fs-body);
+}
+
+.orgos-meta-label {
+  font-size: var(--orgos-fs-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--orgos-text-secondary);
+}
+
+/* Utilitarian Buttons */
+.orgos-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--orgos-space-1);
+  font-size: var(--orgos-fs-data);
+  font-weight: 600;
+  height: 36px;
+  padding: 0 var(--orgos-space-2);
+  border-radius: var(--orgos-radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  text-decoration: none;
+}
+
+.orgos-btn--primary {
+  background-color: var(--orgos-primary);
+  color: var(--orgos-text-inverse);
+  border-color: var(--orgos-primary);
+}
+
+.orgos-btn--primary:hover {
+  background-color: var(--orgos-primary-hover);
+}
+
+.orgos-btn--secondary {
+  background-color: var(--orgos-bg-surface);
+  color: var(--orgos-text-primary);
+  border-color: var(--orgos-border-medium);
+}
+
+.orgos-btn--secondary:hover {
+  background-color: var(--orgos-bg-surface-dim);
+  border-color: var(--orgos-border-dark);
+}
+
+/* Badges & Status Pills */
+.orgos-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--orgos-fs-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: var(--orgos-radius-sm);
+  border: 1px solid transparent;
+}
+
+.orgos-badge--success {
+  background-color: var(--orgos-success-bg);
+  color: var(--orgos-success);
+  border-color: var(--orgos-success-border);
+}
+
+.orgos-badge--warning {
+  background-color: var(--orgos-warning-bg);
+  color: var(--orgos-warning);
+  border-color: var(--orgos-warning-border);
+}
+
+.orgos-badge--primary {
+  background-color: var(--orgos-primary-subtle);
+  color: var(--orgos-primary);
+  border-color: var(--orgos-primary-border);
+}
+
+.orgos-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+/* ==========================================================================
+   7. SPREADSHEET TABLE PATTERN
+   ========================================================================== */
+.orgos-table-wrapper {
+  background: var(--orgos-bg-surface);
+  border: 1px solid var(--orgos-border-light);
+  border-radius: var(--orgos-radius-sm);
+  overflow: hidden;
+  box-shadow: var(--orgos-shadow-sm);
+}
+
+.orgos-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: var(--orgos-fs-data);
+}
+
+.orgos-table th {
+  background-color: var(--orgos-bg-surface-dim);
+  color: var(--orgos-text-secondary);
+  font-size: var(--orgos-fs-micro);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px var(--orgos-space-2);
+  border-bottom: 1px solid var(--orgos-border-medium);
+}
+
+.orgos-table td {
+  padding: 10px var(--orgos-space-2);
+  border-bottom: 1px solid var(--orgos-border-light);
+  color: var(--orgos-text-primary);
+}
+
+.orgos-table tr:last-child td {
+  border-bottom: none;
+}
+
+.orgos-table tr:hover td {
+  background-color: var(--orgos-bg-app);
+}
+
+.orgos-mono {
+  font-family: var(--orgos-font-mono);
+}
+
+/* ==========================================================================
+   8. AUDIT / GROUNDING CALLOUT
+   ========================================================================== */
+.orgos-grounding-box {
+  background-color: var(--orgos-success-bg);
+  border-left: 3px solid var(--orgos-success);
+  border-top: 1px solid var(--orgos-success-border);
+  border-right: 1px solid var(--orgos-success-border);
+  border-bottom: 1px solid var(--orgos-success-border);
+  padding: var(--orgos-space-2);
+  border-radius: var(--orgos-radius-sm);
+  font-family: var(--orgos-font-mono);
+  font-size: var(--orgos-fs-caption);
+  color: var(--orgos-text-primary);
+}
