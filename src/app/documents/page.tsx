@@ -43,7 +43,15 @@ export type DocumentCategory =
   | "budget"
   | "minutes"
   | "contact_list"
-  | "general";
+  | "general"
+  | string;
+
+export type DocumentVisibility = "all" | "officers" | "exec" | "president";
+
+export interface DocumentTypeItem {
+  id: string;
+  label: string;
+}
 
 export interface DocumentItem {
   id: string;
@@ -51,11 +59,12 @@ export interface DocumentItem {
   uploaded_by?: string;
   uploader_name?: string;
   title: string;
-  category: DocumentCategory;
+  category: string;
   file_path: string;
   file_size_bytes: number;
   mime_type: string;
   summary?: string | null;
+  visibility: DocumentVisibility;
   created_at: string;
   is_indexed: boolean;
 }
@@ -78,8 +87,98 @@ const navigationItems = [
   { label: "Account", icon: "⚙️", href: "/account" },
 ];
 
+const DEFAULT_DOC_TYPES: DocumentTypeItem[] = [
+  { id: "event_guide", label: "Event Guide" },
+  { id: "budget", label: "Budget & Finance" },
+  { id: "minutes", label: "Meeting Minutes" },
+  { id: "contact_list", label: "Contact List" },
+  { id: "general", label: "General / Charter" },
+];
+
+const VISIBILITY_OPTIONS: {
+  value: DocumentVisibility;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "all",
+    label: "All Members",
+    description: "Visible to all active chapter members",
+  },
+  {
+    value: "officers",
+    label: "Officers & Above",
+    description: "Restricted to executive board and committee officers",
+  },
+  {
+    value: "exec",
+    label: "Executive Board",
+    description: "Restricted to President and Treasurer",
+  },
+  {
+    value: "president",
+    label: "President Only",
+    description: "Strictly confidential; visible only to the President",
+  },
+];
+
+function parseVisibility(summary?: string | null): DocumentVisibility {
+  if (!summary) return "all";
+  const match = summary.match(/^\[access:(all|officers|exec|president)\]/i);
+  if (match && match[1]) {
+    const val = match[1].toLowerCase();
+    if (val === "officers" || val === "exec" || val === "president") {
+      return val as DocumentVisibility;
+    }
+  }
+  return "all";
+}
+
+function cleanSummary(summary?: string | null): string {
+  if (!summary) return "";
+  return summary.replace(/^\[access:(all|officers|exec|president)\]\s*/i, "").trim();
+}
+
+function canUserViewDocument(
+  userRole: string,
+  visibility?: DocumentVisibility | string
+): boolean {
+  const role = (userRole || "").toLowerCase();
+  const vis = (visibility || "all").toLowerCase();
+
+  // President and superadmins can always see everything
+  if (role === "president" || role === "admin" || role === "owner") return true;
+
+  if (vis === "all") return true;
+
+  if (vis === "officers") {
+    return [
+      "president",
+      "treasurer",
+      "officer",
+      "event_lead",
+      "lead",
+      "admin",
+      "vice_president",
+      "vp",
+    ].includes(role);
+  }
+
+  if (vis === "exec") {
+    return ["president", "treasurer", "vice_president", "vp", "admin"].includes(
+      role
+    );
+  }
+
+  if (vis === "president") {
+    return role === "president" || role === "admin";
+  }
+
+  return true;
+}
+
 const CATEGORY_CONFIG: Record<
-  DocumentCategory,
+  string,
   { label: string }
 > = {
   event_guide: {
@@ -181,20 +280,32 @@ export default function DocumentsPage() {
 
   // Modals State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isDocTypesModalOpen, setIsDocTypesModalOpen] = useState(false);
+  const [newDocTypeLabel, setNewDocTypeLabel] = useState("");
   const [viewingDocument, setViewingDocument] = useState<DocumentItem | null>(null);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   const [deletingDocument, setDeletingDocument] = useState<DocumentItem | null>(null);
 
+  // Dynamic Document Types (Configurable by President)
+  const [docTypes, setDocTypes] = useState<DocumentTypeItem[]>(DEFAULT_DOC_TYPES);
+
   // Upload Form State
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadTitle, setUploadTitle] = useState("");
-  const [uploadCategory, setUploadCategory] =
-    useState<DocumentCategory>("general");
+  const [uploadCategory, setUploadCategory] = useState<string>("general");
+  const [uploadVisibility, setUploadVisibility] =
+    useState<DocumentVisibility>("all");
   const [uploadSummary, setUploadSummary] = useState("");
   const [isSubmittingUpload, setIsSubmittingUpload] = useState(false);
   const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
+  const [isUpdatingVisibility, setIsUpdatingVisibility] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const localFileUrls = useRef<Map<string, string>>(new Map());
+
+  // Determine if active user is President
+  const isPresident =
+    currentUserRole?.toLowerCase() === "president" ||
+    user?.user_metadata?.role?.toLowerCase() === "president";
 
   const showToast = useCallback(
     (type: "success" | "error", message: string) => {
@@ -254,6 +365,21 @@ export default function DocumentsPage() {
           }
         }
 
+        // Load custom document types for this organization
+        if (typeof window !== "undefined" && targetOrgId) {
+          try {
+            const savedTypes = localStorage.getItem(
+              `orgos_doc_types_${targetOrgId}`
+            );
+            if (savedTypes) {
+              const parsed = JSON.parse(savedTypes);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                setDocTypes(parsed);
+              }
+            }
+          } catch {}
+        }
+
         // Query Supabase documents table
         let query = supabase
           .from("documents")
@@ -272,20 +398,25 @@ export default function DocumentsPage() {
         const { data: dbDocs, error: dbError } = await query;
 
         if (!dbError && dbDocs && dbDocs.length > 0) {
-          const formatted: DocumentItem[] = dbDocs.map((item: any) => ({
-            id: item.id,
-            org_id: item.org_id,
-            uploaded_by: item.uploaded_by,
-            uploader_name: item.uploader_name || "Officer",
-            title: item.title,
-            category: item.category as DocumentCategory,
-            file_path: item.file_path,
-            file_size_bytes: item.file_size_bytes || 0,
-            mime_type: item.mime_type || "application/octet-stream",
-            summary: item.summary,
-            created_at: item.created_at,
-            is_indexed: true,
-          }));
+          const formatted: DocumentItem[] = dbDocs.map((item: any) => {
+            const vis = parseVisibility(item.summary);
+            const clean = cleanSummary(item.summary);
+            return {
+              id: item.id,
+              org_id: item.org_id,
+              uploaded_by: item.uploaded_by,
+              uploader_name: item.uploader_name || "Officer",
+              title: item.title,
+              category: item.category || "general",
+              file_path: item.file_path,
+              file_size_bytes: item.file_size_bytes || 0,
+              mime_type: item.mime_type || "application/octet-stream",
+              summary: clean,
+              visibility: vis,
+              created_at: item.created_at,
+              is_indexed: true,
+            };
+          });
           setDocuments(formatted);
         } else {
           // No fallback data: if no documents exist in database, state strictly empty
@@ -441,6 +572,9 @@ export default function DocumentsPage() {
       const orgUuid = isUuid(activeOrgId) ? activeOrgId : null;
       const userUuid = isUuid(user?.id) ? user?.id : null;
 
+      const rawSummary = uploadSummary.trim() || "Uploaded to organizational vault.";
+      const encodedSummary = `[access:${uploadVisibility}] ${rawSummary}`;
+
       const newDoc: DocumentItem = {
         id: docId,
         org_id: activeOrgId,
@@ -451,7 +585,8 @@ export default function DocumentsPage() {
         file_path: storageKey,
         file_size_bytes: uploadFile.size,
         mime_type: uploadFile.type || `application/${fileExt || "octet-stream"}`,
-        summary: uploadSummary.trim() || "Uploaded to organizational vault.",
+        summary: rawSummary,
+        visibility: uploadVisibility,
         created_at: new Date().toISOString(),
         is_indexed: true,
       };
@@ -490,7 +625,7 @@ export default function DocumentsPage() {
         file_path: newDoc.file_path,
         file_size_bytes: newDoc.file_size_bytes,
         mime_type: newDoc.mime_type,
-        summary: newDoc.summary,
+        summary: encodedSummary,
       });
 
       if (insertError) {
@@ -508,7 +643,8 @@ export default function DocumentsPage() {
 
       setUploadFile(null);
       setUploadTitle("");
-      setUploadCategory("general");
+      setUploadCategory(docTypes[0]?.id || "general");
+      setUploadVisibility("all");
       setUploadSummary("");
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (err: any) {
@@ -518,6 +654,143 @@ export default function DocumentsPage() {
       setIsSubmittingUpload(false);
     }
   };
+
+  // President Document Type Handlers
+  const handleAddDocType = (label: string) => {
+    const trimmed = label.trim();
+    if (!trimmed) return;
+    const id =
+      trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") ||
+      `custom_${Date.now()}`;
+
+    if (
+      docTypes.some(
+        (t) => t.id === id || t.label.toLowerCase() === trimmed.toLowerCase()
+      )
+    ) {
+      showToast("error", `Document type "${trimmed}" already exists.`);
+      return;
+    }
+
+    const updated = [...docTypes, { id, label: trimmed }];
+    setDocTypes(updated);
+    const activeOrgId = organization?.id || "org-default";
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          `orgos_doc_types_${activeOrgId}`,
+          JSON.stringify(updated)
+        );
+      } catch {}
+    }
+    showToast("success", `Added document type "${trimmed}".`);
+    setNewDocTypeLabel("");
+  };
+
+  const handleRemoveDocType = (typeId: string) => {
+    if (docTypes.length <= 1) {
+      showToast("error", "At least one document type must remain.");
+      return;
+    }
+    const toRemove = docTypes.find((t) => t.id === typeId);
+    const updated = docTypes.filter((t) => t.id !== typeId);
+    setDocTypes(updated);
+    const activeOrgId = organization?.id || "org-default";
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(
+          `orgos_doc_types_${activeOrgId}`,
+          JSON.stringify(updated)
+        );
+      } catch {}
+    }
+    showToast("success", `Removed document type "${toRemove?.label || typeId}".`);
+    if (uploadCategory === typeId && updated.length > 0) {
+      setUploadCategory(updated[0].id);
+    }
+    if (selectedCategory === typeId) {
+      setSelectedCategory("all");
+    }
+  };
+
+  // President Document Visibility Handler
+  const handleUpdateDocumentVisibility = async (
+    docId: string,
+    newVisibility: DocumentVisibility
+  ) => {
+    setIsUpdatingVisibility(true);
+    const targetDoc = documents.find((d) => d.id === docId);
+    if (!targetDoc) {
+      setIsUpdatingVisibility(false);
+      return;
+    }
+
+    const rawCleanSummary = cleanSummary(targetDoc.summary);
+    const encodedSummary = `[access:${newVisibility}] ${rawCleanSummary}`.trim();
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("documents")
+        .update({ summary: encodedSummary })
+        .eq("id", docId);
+
+      if (error) {
+        console.error("Failed to update visibility in DB:", error);
+        showToast("error", "Failed to update visibility: " + error.message);
+        return;
+      }
+
+      const updatedDocs = documents.map((doc) => {
+        if (doc.id === docId) {
+          return {
+            ...doc,
+            visibility: newVisibility,
+            summary: rawCleanSummary || "Uploaded to organizational vault.",
+          };
+        }
+        return doc;
+      });
+
+      setDocuments(updatedDocs);
+      if (viewingDocument && viewingDocument.id === docId) {
+        setViewingDocument({
+          ...viewingDocument,
+          visibility: newVisibility,
+          summary: rawCleanSummary || "Uploaded to organizational vault.",
+        });
+      }
+
+      const label =
+        VISIBILITY_OPTIONS.find((v) => v.value === newVisibility)?.label ||
+        newVisibility;
+      showToast(
+        "success",
+        `Access updated: "${targetDoc.title}" is now visible to ${label}.`
+      );
+    } catch (err: any) {
+      console.error("Error updating visibility:", err);
+      showToast("error", err.message || "Failed to update visibility.");
+    } finally {
+      setIsUpdatingVisibility(false);
+    }
+  };
+
+  // Helper to resolve display label for document category
+  const getCategoryLabel = useCallback(
+    (categoryId: string): string => {
+      const found = docTypes.find((t) => t.id === categoryId);
+      if (found) return found.label;
+      if (CATEGORY_CONFIG[categoryId]) {
+        return CATEGORY_CONFIG[categoryId].label;
+      }
+      return categoryId
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+    },
+    [docTypes]
+  );
 
   // Handle Document Deletion
   const handleDeleteDocument = async () => {
@@ -559,7 +832,7 @@ export default function DocumentsPage() {
 
   // Handle Download Simulation
   const handleDownload = (doc: DocumentItem) => {
-    const dummyContent = `=== OrgOS Document Export ===\nTitle: ${doc.title}\nCategory: ${doc.category}\nUploaded By: ${doc.uploader_name || "Officer"}\nDate: ${doc.created_at}\n\nSummary / Historical Record:\n${doc.summary || "No description provided."}\n\n[Vault Reference Path: ${doc.file_path}]`;
+    const dummyContent = `=== OrgOS Document Export ===\nTitle: ${doc.title}\nCategory: ${getCategoryLabel(doc.category)}\nAccess Level: ${doc.visibility || "all"}\nUploaded By: ${doc.uploader_name || "Officer"}\nDate: ${doc.created_at}\n\nSummary / Historical Record:\n${doc.summary || "No description provided."}\n\n[Vault Reference Path: ${doc.file_path}]`;
     const blob = new Blob([dummyContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -572,9 +845,16 @@ export default function DocumentsPage() {
     showToast("success", `Downloading "${doc.title}"...`);
   };
 
+  // Filter by user role permissions first
+  const visibleDocuments = useMemo(() => {
+    return documents.filter((doc) =>
+      canUserViewDocument(currentUserRole, doc.visibility)
+    );
+  }, [documents, currentUserRole]);
+
   // Filter & Sort Calculation
   const filteredDocuments = useMemo(() => {
-    return documents
+    return visibleDocuments
       .filter((doc) => {
         const matchesCategory =
           selectedCategory === "all" || doc.category === selectedCategory;
@@ -605,12 +885,12 @@ export default function DocumentsPage() {
         }
         return 0;
       });
-  }, [documents, selectedCategory, searchQuery, sortBy]);
+  }, [visibleDocuments, selectedCategory, searchQuery, sortBy]);
 
-  // Aggregate Vault Metrics
+  // Aggregate Vault Metrics based on visible documents
   const totalStorageBytes = useMemo(() => {
-    return documents.reduce((acc, d) => acc + (d.file_size_bytes || 0), 0);
-  }, [documents]);
+    return visibleDocuments.reduce((acc, d) => acc + (d.file_size_bytes || 0), 0);
+  }, [visibleDocuments]);
 
   const indexedCount = useMemo(() => {
     return documents.filter((d) => d.is_indexed).length;
@@ -704,6 +984,12 @@ export default function DocumentsPage() {
                 <span className="px-2 py-0.5 rounded-sm bg-[#EBF1F8] border border-[#C8D8E9] text-[11px] font-semibold text-[#1B365D]">
                   Phase 2 Ingestion
                 </span>
+                {isPresident && (
+                  <span className="px-2 py-0.5 rounded-sm bg-purple-50 border border-purple-200 text-[11px] font-semibold text-purple-700 flex items-center gap-1">
+                    <Shield className="w-3 h-3 text-purple-600" />
+                    <span>President Privileges</span>
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-600 mt-1 max-w-2xl">
                 Upload event post-mortems, budgets, meeting minutes, and
@@ -737,7 +1023,7 @@ export default function DocumentsPage() {
               <span className="orgos-meta-label">Total Documents</span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-bold text-slate-900">
-                  {documents.length}
+                  {visibleDocuments.length}
                 </span>
                 <span className="text-[11px] text-slate-500">files vaulted</span>
               </div>
@@ -750,8 +1036,8 @@ export default function DocumentsPage() {
                   {indexedCount}
                 </span>
                 <span className="text-[11px] text-emerald-600 font-medium">
-                  {documents.length > 0
-                    ? `${Math.round((indexedCount / documents.length) * 100)}% indexed`
+                  {visibleDocuments.length > 0
+                    ? `${Math.round((indexedCount / visibleDocuments.length) * 100)}% indexed`
                     : "0%"}
                 </span>
               </div>
@@ -772,11 +1058,11 @@ export default function DocumentsPage() {
               <div className="flex items-center gap-1.5 mt-1">
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    documents.length > 0 ? "bg-emerald-500" : "bg-slate-300"
+                    visibleDocuments.length > 0 ? "bg-emerald-500" : "bg-slate-300"
                   }`}
                 ></span>
                 <span className="text-xs font-semibold text-slate-800">
-                  {documents.length > 0 ? "pgvector Pipeline Active" : "Ready for Ingestion"}
+                  {visibleDocuments.length > 0 ? "pgvector Pipeline Active" : "Ready for Ingestion"}
                 </span>
               </div>
             </div>
@@ -817,28 +1103,37 @@ export default function DocumentsPage() {
                       : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                   }`}
                 >
-                  All ({documents.length})
+                  All ({visibleDocuments.length})
                 </button>
-                {(Object.keys(CATEGORY_CONFIG) as DocumentCategory[]).map(
-                  (catKey) => {
-                    const count = documents.filter(
-                      (d) => d.category === catKey
-                    ).length;
-                    return (
-                      <button
-                        key={catKey}
-                        type="button"
-                        onClick={() => setSelectedCategory(catKey)}
-                        className={`px-2.5 py-1 text-xs font-medium rounded-sm border transition-colors whitespace-nowrap ${
-                          selectedCategory === catKey
-                            ? "bg-[#1B365D] text-white border-[#1B365D]"
-                            : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        {CATEGORY_CONFIG[catKey].label} ({count})
-                      </button>
-                    );
-                  }
+                {docTypes.map((dt) => {
+                  const count = visibleDocuments.filter(
+                    (d) => d.category === dt.id
+                  ).length;
+                  return (
+                    <button
+                      key={dt.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(dt.id)}
+                      className={`px-2.5 py-1 text-xs font-medium rounded-sm border transition-colors whitespace-nowrap ${
+                        selectedCategory === dt.id
+                          ? "bg-[#1B365D] text-white border-[#1B365D]"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {dt.label} ({count})
+                    </button>
+                  );
+                })}
+                {isPresident && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDocTypesModalOpen(true)}
+                    className="px-2 py-1 text-xs font-medium rounded-sm border border-dashed border-slate-300 text-slate-600 hover:text-[#1B365D] hover:border-[#1B365D] bg-white transition-colors whitespace-nowrap flex items-center gap-1"
+                    title="Manage Document Types"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Manage Types</span>
+                  </button>
                 )}
               </div>
 
@@ -875,7 +1170,7 @@ export default function DocumentsPage() {
                 <FolderArchive className="w-6 h-6" />
               </div>
 
-              {documents.length === 0 ? (
+              {visibleDocuments.length === 0 ? (
                 // 1. Vault is completely empty
                 <>
                   <h3 className="text-base font-bold text-slate-800">
@@ -935,19 +1230,17 @@ export default function DocumentsPage() {
               <table className="orgos-table">
                 <thead>
                   <tr>
-                    <th className="w-[40%]">Document Title & Summary</th>
-                    <th className="w-[15%]">Category</th>
-                    <th className="w-[10%]">Size</th>
-                    <th className="w-[15%]">Uploaded By</th>
-                    <th className="w-[10%]">Date</th>
+                    <th className="w-[36%]">Document Title & Summary</th>
+                    <th className="w-[14%]">Category</th>
+                    <th className="w-[12%]">Visibility</th>
+                    <th className="w-[8%]">Size</th>
+                    <th className="w-[12%]">Uploaded By</th>
+                    <th className="w-[8%]">Date</th>
                     <th className="w-[10%] text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredDocuments.map((doc) => {
-                    const categoryMeta =
-                      CATEGORY_CONFIG[doc.category] || CATEGORY_CONFIG.general;
-
                     return (
                       <tr
                         key={doc.id}
@@ -980,11 +1273,44 @@ export default function DocumentsPage() {
                         </td>
 
                         <td>
-                          <span
-                            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded border`}
-                          >
-                            <span>{categoryMeta.label}</span>
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded border bg-slate-50 text-slate-700">
+                            <span>{getCategoryLabel(doc.category)}</span>
                           </span>
+                        </td>
+
+                        <td>
+                          {doc.visibility === "president" ? (
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200"
+                              title="Restricted: President Only"
+                            >
+                              <Shield className="w-3 h-3 text-purple-600" />
+                              <span>President</span>
+                            </span>
+                          ) : doc.visibility === "exec" ? (
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200"
+                              title="Restricted: Executive Board"
+                            >
+                              <Shield className="w-3 h-3 text-amber-600" />
+                              <span>Exec Board</span>
+                            </span>
+                          ) : doc.visibility === "officers" ? (
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200"
+                              title="Restricted: Officers & Above"
+                            >
+                              <Shield className="w-3 h-3 text-blue-600" />
+                              <span>Officers</span>
+                            </span>
+                          ) : (
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-slate-50 text-slate-600 border border-slate-200"
+                              title="Visible to all organization members"
+                            >
+                              <span>All Members</span>
+                            </span>
+                          )}
                         </td>
 
                         <td>
@@ -1014,7 +1340,7 @@ export default function DocumentsPage() {
                               type="button"
                               onClick={() => setViewingDocument(doc)}
                               className="p-1.5 rounded text-slate-400 hover:text-[#1B365D] hover:bg-slate-100 transition-colors"
-                              title="Inspect Details"
+                              title="Inspect Details & Permissions"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
@@ -1145,31 +1471,57 @@ export default function DocumentsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Institutional Category
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Institutional Category
+                  </label>
+                  {isPresident && (
+                    <button
+                      type="button"
+                      onClick={() => setIsDocTypesModalOpen(true)}
+                      className="text-[11px] text-[#1B365D] hover:underline flex items-center gap-1 font-medium"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Manage Types</span>
+                    </button>
+                  )}
+                </div>
                 <select
                   value={uploadCategory}
+                  onChange={(e) => setUploadCategory(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-[#1B365D] text-slate-800 bg-white"
+                >
+                  {docTypes.map((dt) => (
+                    <option key={dt.id} value={dt.id}>
+                      {dt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    Visibility & Access Permission
+                  </label>
+                  {isPresident && (
+                    <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                      President Control
+                    </span>
+                  )}
+                </div>
+                <select
+                  value={uploadVisibility}
                   onChange={(e) =>
-                    setUploadCategory(e.target.value as DocumentCategory)
+                    setUploadVisibility(e.target.value as DocumentVisibility)
                   }
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-[#1B365D] text-slate-800 bg-white"
                 >
-                  <option value="event_guide">
-                    🗺️ Event Guide (Logistics, Playbooks, Venue Rules)
-                  </option>
-                  <option value="budget">
-                    💰 Budget & Finance (Allocations, Ledgers, Receipts)
-                  </option>
-                  <option value="minutes">
-                    📝 Meeting Minutes (Executive & General Body Records)
-                  </option>
-                  <option value="contact_list">
-                    📇 Contact List (Advisors, Vendors, Campus Partners)
-                  </option>
-                  <option value="general">
-                    📄 General / Charter (Bylaws, Policies, Transitions)
-                  </option>
+                  {VISIBILITY_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label} — {opt.description}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1310,14 +1662,70 @@ export default function DocumentsPage() {
                   <h4 className="text-xs font-bold text-slate-900">
                     {viewingDocument.title}
                   </h4>
-                  <div className="flex items-center gap-2 mt-1">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     <span className="text-[11px] font-semibold px-2 py-0.5 rounded border bg-slate-50 text-slate-700">
-                      {CATEGORY_CONFIG[viewingDocument.category]?.label || "General"}
+                      {getCategoryLabel(viewingDocument.category)}
                     </span>
                     <span className="text-xs font-mono text-slate-500">
                       {formatBytes(viewingDocument.file_size_bytes)}
                     </span>
                   </div>
+                </div>
+
+                {/* Access Permission & Visibility Control */}
+                <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-[#1B365D]" />
+                      Access & Visibility
+                    </span>
+                    {isPresident && (
+                      <span className="text-[10px] font-semibold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200">
+                        President Control
+                      </span>
+                    )}
+                  </div>
+                  {isPresident ? (
+                    <div className="mt-2 space-y-1.5">
+                      <label className="text-[11px] text-slate-600 block">
+                        Set who can view this document:
+                      </label>
+                      <select
+                        value={viewingDocument.visibility || "all"}
+                        onChange={(e) =>
+                          handleUpdateDocumentVisibility(
+                            viewingDocument.id,
+                            e.target.value as DocumentVisibility
+                          )
+                        }
+                        disabled={isUpdatingVisibility}
+                        className="w-full px-2 py-1.5 text-xs bg-white border border-slate-300 rounded-sm focus:outline-none focus:ring-1 focus:ring-[#1B365D] font-medium text-slate-800 cursor-pointer disabled:opacity-50"
+                      >
+                        {VISIBILITY_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-slate-500 mt-1">
+                        {viewingDocument.visibility === "president" &&
+                          "Strictly confidential: Visible only to the President."}
+                        {viewingDocument.visibility === "exec" &&
+                          "Restricted to President and Treasurer."}
+                        {viewingDocument.visibility === "officers" &&
+                          "Restricted to executive board and committee officers."}
+                        {(!viewingDocument.visibility ||
+                          viewingDocument.visibility === "all") &&
+                          "Visible to all active chapter members."}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-slate-600 font-medium mt-1">
+                      {VISIBILITY_OPTIONS.find(
+                        (v) => v.value === viewingDocument.visibility
+                      )?.label || "All Members"}
+                    </p>
+                  )}
                 </div>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-sm p-3 text-xs text-slate-700">
@@ -1434,6 +1842,110 @@ export default function DocumentsPage() {
                   </>
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================================== */}
+      {/* MODAL 4: Manage Document Types Modal (President Only)                */}
+      {/* ==================================================================== */}
+      {isDocTypesModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-sm shadow-xl max-w-md w-full overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+              <div className="flex items-center gap-2">
+                <Shield className="w-4 h-4 text-[#1B365D]" />
+                <h3 className="text-sm font-bold text-[#1B365D]">
+                  Manage Document Types
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDocTypesModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <p className="text-xs text-slate-600 mb-3">
+                  As President, you can define custom document types for your
+                  organization or remove types that are no longer relevant.
+                </p>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAddDocType(newDocTypeLabel);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <input
+                    type="text"
+                    placeholder="e.g., Transition Guides, Sponsorships..."
+                    value={newDocTypeLabel}
+                    onChange={(e) => setNewDocTypeLabel(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-[#1B365D] text-slate-800"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newDocTypeLabel.trim()}
+                    className="orgos-btn orgos-btn--primary text-xs h-8 shrink-0 disabled:opacity-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Type</span>
+                  </button>
+                </form>
+              </div>
+
+              <div className="border-t border-slate-200 pt-3">
+                <h4 className="text-xs font-semibold text-slate-700 mb-2">
+                  Active Document Types ({docTypes.length})
+                </h4>
+                <div className="space-y-1.5 max-h-56 overflow-y-auto">
+                  {docTypes.map((dt) => {
+                    const usageCount = documents.filter(
+                      (d) => d.category === dt.id
+                    ).length;
+                    return (
+                      <div
+                        key={dt.id}
+                        className="flex items-center justify-between px-3 py-2 rounded-sm bg-slate-50 border border-slate-200 text-xs"
+                      >
+                        <div className="min-w-0 pr-2">
+                          <span className="font-semibold text-slate-800 block truncate">
+                            {dt.label}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {usageCount} document{usageCount === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveDocType(dt.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors shrink-0"
+                          title={`Remove ${dt.label}`}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-200 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setIsDocTypesModalOpen(false)}
+                  className="orgos-btn orgos-btn--secondary text-xs h-8"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>
