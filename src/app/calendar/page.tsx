@@ -26,7 +26,7 @@ const navigationItems = [
   { label: "Account", icon: "⚙️", href: "/account" },
 ];
 
-type CalendarView = "Month" | "Week" | "Day";
+type CalendarView = "Month" | "Week";
 
 interface CalendarEvent {
   id: string;
@@ -34,9 +34,27 @@ interface CalendarEvent {
   date: Date;
   time?: string;
   location?: string;
+  category?: string;
+  description?: string;
 }
 
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function parseLocalDate(dateValue: string | Date): Date {
+  if (dateValue instanceof Date) return dateValue;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    const [year, month, day] = dateValue.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(dateValue);
+}
+
+function toDateInputString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 export default function Calendar() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
@@ -44,7 +62,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState<CalendarView>("Month");
-  const [events] = useState<CalendarEvent[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -59,6 +77,25 @@ export default function Calendar() {
       setUser(session?.user ?? null);
     });
 
+    if (typeof window !== "undefined") {
+      try {
+        const rawEvents = localStorage.getItem("orgos_events");
+        if (rawEvents) {
+          const parsed = JSON.parse(rawEvents);
+          if (Array.isArray(parsed)) {
+            setEvents(
+              parsed.map((item) => ({
+                ...item,
+                date: parseLocalDate(item.date),
+              }))
+            );
+          }
+        }
+      } catch {
+        // Ignore malformed localStorage data
+      }
+    }
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -69,14 +106,18 @@ export default function Calendar() {
     today.getDate()
   );
 
-  const upcomingEvents = events
-    .filter((event) => event.date >= startOfToday)
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
-
   const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
+
+  const upcomingEvents = events
+    .filter((event) => event.date >= startOfToday)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const selectedDateEvents = events.filter((event) =>
+    isSameDay(event.date, selectedDate)
+  );
 
   const monthLabel = currentDate.toLocaleDateString("en-US", {
     month: "long",
@@ -98,14 +139,9 @@ export default function Calendar() {
         1
       );
       setCurrentDate(nextDate);
-    } else if (view === "Week") {
-      const nextDate = new Date(selectedDate);
-      nextDate.setDate(nextDate.getDate() + direction * 7);
-      setSelectedDate(nextDate);
-      setCurrentDate(nextDate);
     } else {
       const nextDate = new Date(selectedDate);
-      nextDate.setDate(nextDate.getDate() + direction);
+      nextDate.setDate(nextDate.getDate() + direction * 7);
       setSelectedDate(nextDate);
       setCurrentDate(nextDate);
     }
@@ -146,30 +182,21 @@ export default function Calendar() {
     return date;
   });
 
-  const displayedDates =
-    view === "Month"
-      ? monthDays
-      : view === "Week"
-        ? weekDates
-        : [selectedDate];
+  const displayedDates = view === "Month" ? monthDays : weekDates;
 
   const heading =
     view === "Month"
       ? monthLabel
-      : view === "Week"
-        ? `${weekDates[0].toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })} – ${weekDates[6].toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          })}`
-        : selectedDate.toLocaleDateString("en-US", {
-            month: "long",
-            day: "numeric",
-            year: "numeric",
-          });
+      : `${weekDates[0].toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })} – ${weekDates[6].toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}`;
+
+  const createEventHref = `/event-form?date=${toDateInputString(selectedDate)}`;
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-900 selection:bg-[#1B365D] selection:text-white">
@@ -227,16 +254,13 @@ export default function Calendar() {
               </h1>
             </div>
 
-            <button
-              type="button"
-              onClick={() =>
-                alert("Connect this button to your event creation form.")
-              }
+            <Link
+              href={createEventHref}
               className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#1B365D] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#254775] focus:outline-none focus:ring-2 focus:ring-[#1B365D] focus:ring-offset-2"
             >
               <Plus size={17} />
               Create event
-            </button>
+            </Link>
           </section>
 
           {/* Calendar workspace */}
@@ -254,11 +278,7 @@ export default function Calendar() {
                       {heading}
                     </h2>
                     <p className="mt-0.5 text-sm text-slate-500">
-                      {view === "Month"
-                        ? "Monthly overview"
-                        : view === "Week"
-                          ? "Weekly schedule"
-                          : "Daily schedule"}
+                      {view === "Month" ? "Monthly overview" : "Weekly schedule"}
                     </p>
                   </div>
                 </div>
@@ -299,23 +319,21 @@ export default function Calendar() {
               {/* View selector */}
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
-                  {(["Month", "Week", "Day"] as CalendarView[]).map(
-                    (option) => (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => setView(option)}
-                        aria-pressed={view === option}
-                        className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
-                          view === option
-                            ? "bg-white text-[#1B365D] shadow-sm ring-1 ring-slate-200"
-                            : "text-slate-500 hover:text-slate-800"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    )
-                  )}
+                  {(["Month", "Week"] as CalendarView[]).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setView(option)}
+                      aria-pressed={view === option}
+                      className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+                        view === option
+                          ? "bg-white text-[#1B365D] shadow-sm ring-1 ring-slate-200"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -328,38 +346,29 @@ export default function Calendar() {
             </div>
 
             {/* Weekday labels */}
-            {view !== "Day" && (
-              <div
-                className={`grid ${
-                  view === "Week" ? "grid-cols-7" : "grid-cols-7"
-                } border-b border-slate-200 bg-slate-50/80`}
-              >
-                {weekDays.map((day) => (
-                  <div
-                    key={day}
-                    className="py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80">
+              {weekDays.map((day) => (
+                <div
+                  key={day}
+                  className="py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
 
             {/* Calendar grid */}
-            <div
-              className={`grid ${
-                view === "Day"
-                  ? "grid-cols-1"
-                  : "grid-cols-7"
-              }`}
-            >
-              {displayedDates.map((date, index) => {
+            <div className="grid grid-cols-7">
+              {displayedDates.map((date) => {
                 const isCurrentMonth =
                   date.getMonth() === currentDate.getMonth() &&
                   date.getFullYear() === currentDate.getFullYear();
 
                 const isSelected = isSameDay(date, selectedDate);
                 const isCurrentDay = isSameDay(date, today);
+                const dayEvents = events.filter((event) =>
+                  isSameDay(event.date, date)
+                );
 
                 return (
                   <button
@@ -370,9 +379,7 @@ export default function Calendar() {
                     className={`group relative flex min-w-0 flex-col justify-start border-b border-r border-slate-200 p-1.5 text-left transition-colors focus:z-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#1B365D] sm:p-2.5 ${
                       view === "Month"
                         ? "min-h-[88px] sm:min-h-[118px] lg:min-h-[140px]"
-                        : view === "Week"
-                          ? "min-h-[180px] sm:min-h-[250px]"
-                          : "min-h-[360px] sm:min-h-[480px]"
+                        : "min-h-[180px] sm:min-h-[250px]"
                     } ${
                       isSelected
                         ? "bg-blue-50/60"
@@ -383,13 +390,7 @@ export default function Calendar() {
                         : ""
                     }`}
                   >
-                    <div
-                      className={`flex ${
-                        view === "Day"
-                          ? "items-center gap-3"
-                          : "justify-start"
-                      }`}
-                    >
+                    <div className="flex justify-start">
                       <span
                         className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition sm:h-8 sm:w-8 sm:text-sm ${
                           isCurrentDay
@@ -403,58 +404,25 @@ export default function Calendar() {
                       >
                         {date.getDate()}
                       </span>
+                    </div>
 
-                      {view === "Day" && (
-                        <div>
-                          <p className="font-semibold text-slate-900">
-                            {date.toLocaleDateString("en-US", {
-                              weekday: "long",
-                              month: "long",
-                              day: "numeric",
-                            })}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {isCurrentDay
-                              ? "Today"
-                              : "Daily schedule"}
-                          </p>
+                    <div className="mt-2 space-y-1">
+                      {dayEvents.slice(0, 2).map((event) => (
+                        <div
+                          key={event.id}
+                          className="truncate rounded bg-[#1B365D]/10 px-1.5 py-0.5 text-[11px] font-medium text-[#1B365D]"
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="text-[10px] font-medium text-slate-500">
+                          +{dayEvents.length - 2} more
                         </div>
                       )}
                     </div>
 
-                    {view === "Day" ? (
-                      <div className="mt-5 border-t border-slate-200">
-                        {Array.from({ length: 12 }, (_, hourIndex) => {
-                          const hour = hourIndex + 8;
-
-                          return (
-                            <div
-                              key={hour}
-                              className="flex min-h-[46px] border-b border-slate-100"
-                            >
-                              <div className="w-20 shrink-0 py-2 text-xs text-slate-400">
-                                {new Date(
-                                  2000,
-                                  0,
-                                  1,
-                                  hour
-                                ).toLocaleTimeString("en-US", {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                })}
-                              </div>
-                              <div className="flex-1 border-l border-slate-100" />
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="mt-2">
-                        {/* Event labels can be rendered here when event data is connected. */}
-                      </div>
-                    )}
-
-                    {view === "Month" && isSelected && (
+                    {view === "Month" && isSelected && dayEvents.length === 0 && (
                       <div className="mt-1 hidden text-[10px] font-medium text-[#1B365D] sm:block">
                         Selected
                       </div>
@@ -475,22 +443,33 @@ export default function Calendar() {
                   <p className="text-sm font-semibold text-slate-800">
                     {selectedDateLabel}
                   </p>
-                  <p className="mt-0.5 text-sm text-slate-500">
-                    No events to display for this date.
-                  </p>
+                  {selectedDateEvents.length === 0 ? (
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      No events to display for this date.
+                    </p>
+                  ) : (
+                    <div className="mt-1 space-y-1">
+                      {selectedDateEvents.map((event) => (
+                        <p key={event.id} className="text-xs text-slate-600">
+                          <span className="font-medium text-slate-900">
+                            {event.title}
+                          </span>
+                          {event.time ? ` • ${event.time}` : ""}
+                          {event.location ? ` • ${event.location}` : ""}
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  alert("Connect this button to your event creation form.")
-                }
+              <Link
+                href={createEventHref}
                 className="inline-flex h-9 items-center justify-center gap-2 self-start rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:self-auto"
               >
                 <CalendarPlus size={16} />
                 Add event
-              </button>
+              </Link>
             </div>
           </section>
 
