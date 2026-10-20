@@ -6,7 +6,7 @@
 
 :root {
   /* ==========================================================================
-     1. COLOR TOKENS
+     1. COLOR TOKENS (LIGHT MODE DEFAULT)
      ========================================================================== */
   /* Brand Navy */
   --orgos-primary: #1B365D;
@@ -77,6 +77,51 @@
 
   --orgos-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
   --orgos-shadow-md: 0 1px 3px rgba(15, 23, 42, 0.07), 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+/* ==========================================================================
+   1B. DARK MODE COLOR TOKENS
+   ========================================================================== */
+html.dark,
+[data-theme="dark"] {
+  --orgos-primary: #3B82F6;
+  --orgos-primary-hover: #2563EB;
+  --orgos-primary-subtle: #1E293B;
+  --orgos-primary-border: #334155;
+
+  --orgos-success: #34D399;
+  --orgos-success-hover: #10B981;
+  --orgos-success-bg: rgba(16, 185, 129, 0.14);
+  --orgos-success-border: rgba(52, 211, 153, 0.35);
+
+  --orgos-warning: #FBBF24;
+  --orgos-warning-bg: rgba(245, 158, 11, 0.14);
+  --orgos-warning-border: rgba(251, 191, 36, 0.35);
+
+  --orgos-danger: #F87171;
+  --orgos-danger-bg: rgba(239, 68, 68, 0.14);
+  --orgos-danger-border: rgba(248, 113, 113, 0.35);
+
+  --orgos-bg-app: #0B1120;
+  --orgos-bg-surface: #0F172A;
+  --orgos-bg-surface-dim: #1E293B;
+  --orgos-bg-sidebar: #0F172A;
+  --orgos-bg-sidebar-active: #2563EB;
+  --orgos-bg-sidebar-hover: #1E293B;
+
+  --orgos-border-light: #1E293B;
+  --orgos-border-medium: #334155;
+  --orgos-border-dark: #475569;
+
+  --orgos-text-primary: #F8FAFC;
+  --orgos-text-secondary: #94A3B8;
+  --orgos-text-tertiary: #64748B;
+  --orgos-text-inverse: #FFFFFF;
+  --orgos-text-sidebar: #94A3B8;
+  --orgos-text-sidebar-active: #60A5FA;
+
+  --orgos-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --orgos-shadow-md: 0 1px 3px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* ==========================================================================
@@ -151,6 +196,10 @@ body {
   letter-spacing: -0.015em;
 }
 
+html.dark .orgos-title-h1 {
+  color: #F8FAFC;
+}
+
 .orgos-title-h2 {
   font-size: var(--orgos-fs-h2);
   font-weight: 600;
@@ -184,18 +233,28 @@ body {
   border-radius: var(--orgos-radius-sm);
   cursor: pointer;
   border: 1px solid transparent;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   text-decoration: none;
 }
 
 .orgos-btn--primary {
-  background-color: var(--orgos-primary);
+  background-color: #1B365D;
   color: var(--orgos-text-inverse);
-  border-color: var(--orgos-primary);
+  border-color: #1B365D;
+}
+
+html.dark .orgos-btn--primary {
+  background-color: #2563EB;
+  border-color: #3B82F6;
+  color: #FFFFFF;
 }
 
 .orgos-btn--primary:hover {
-  background-color: var(--orgos-primary-hover);
+  background-color: #142847;
+}
+
+html.dark .orgos-btn--primary:hover {
+  background-color: #1D4ED8;
 }
 
 .orgos-btn--secondary {
@@ -239,6 +298,12 @@ body {
   background-color: var(--orgos-primary-subtle);
   color: var(--orgos-primary);
   border-color: var(--orgos-primary-border);
+}
+
+.orgos-badge--neutral {
+  background-color: var(--orgos-bg-surface-dim);
+  color: var(--orgos-text-secondary);
+  border-color: var(--orgos-border-medium);
 }
 
 .orgos-badge-dot {

@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import ThemeSelector from "./ThemeSelector";
 
 export interface SidebarItem {
   label: string;
@@ -73,7 +74,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
               }`}
             >
-              
               {!isCollapsed && (
                 <span className="whitespace-nowrap truncate">{item.label}</span>
               )}
@@ -88,6 +88,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
           );
         })}
       </nav>
+
+      {/* Sidebar Footer: Dark Mode Selector */}
+      <div className="p-2.5 border-t border-slate-200 flex items-center justify-center">
+        {isCollapsed ? (
+          <ThemeSelector variant="icon" />
+        ) : (
+          <div className="w-full space-y-1.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 px-1 block">
+              Theme Mode
+            </span>
+            <ThemeSelector variant="segmented" />
+          </div>
+        )}
+      </div>
     </aside>
   );
 };
