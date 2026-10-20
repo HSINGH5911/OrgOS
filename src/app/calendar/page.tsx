@@ -28,6 +28,14 @@ const navigationItems = [
 
 type CalendarView = "Month" | "Week" | "Day";
 
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time?: string;
+  location?: string;
+}
+
 const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Calendar() {
@@ -36,6 +44,7 @@ export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState<CalendarView>("Month");
+  const [events] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -54,6 +63,15 @@ export default function Calendar() {
   }, []);
 
   const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const upcomingEvents = events
+    .filter((event) => event.date >= startOfToday)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
 
   const isSameDay = (a: Date, b: Date) =>
     a.getFullYear() === b.getFullYear() &&
@@ -480,6 +498,68 @@ export default function Calendar() {
             Select a date to view its schedule. Events will appear here once
             calendar data is connected.
           </p>
+
+          {/* Upcoming Events section */}
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                  Upcoming Events
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Scheduled chapter meetings and activities
+                </p>
+              </div>
+              {upcomingEvents.length > 0 && (
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                  {upcomingEvents.length}
+                </span>
+              )}
+            </div>
+
+            {upcomingEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-4 py-10 text-center sm:px-6">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                  <CalendarDays size={20} />
+                </div>
+                <p className="text-sm font-medium text-slate-800">
+                  No upcoming events are scheduled.
+                </p>
+                <p className="mt-1 max-w-sm text-xs text-slate-500">
+                  When new chapter events or meetings are created, they will appear here.
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-200">
+                {upcomingEvents.map((event) => (
+                  <li
+                    key={event.id}
+                    className="flex flex-col justify-between gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:px-6"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        {event.title}
+                      </p>
+                      {event.location && (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {event.location}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-xs font-medium text-slate-600">
+                      {event.date.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      {event.time ? ` • ${event.time}` : ""}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </main>
       </div>
     </div>
