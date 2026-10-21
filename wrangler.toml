@@ -13,7 +13,9 @@ binding = "ASSETS"
 [vars]
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_K4DFj5era5PYY4vA2YuQeQ_VMrtwf5O"
 NEXT_PUBLIC_SUPABASE_URL = "https://eegzydvfclgepkbulace.supabase.co"
+GOOGLE_GENERATIVE_AI_API_KEY = "YOUR_GOOGLE_GEMINI_API_KEY_HERE"
 
 [previews.vars]
 NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_K4DFj5era5PYY4vA2YuQeQ_VMrtwf5O"
 NEXT_PUBLIC_SUPABASE_URL = "https://eegzydvfclgepkbulace.supabase.co"
+GOOGLE_GENERATIVE_AI_API_KEY = "YOUR_GOOGLE_GEMINI_API_KEY_HERE"

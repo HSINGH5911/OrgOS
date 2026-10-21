@@ -155,10 +155,10 @@ export default function DashboardView({ user }: DashboardViewProps) {
               Query historical budgets, venue approvals, and past checklists.
             </p>
           </div>
-          <button className="mt-4 orgos-btn orgos-btn--secondary w-full text-xs">
+          <Link href="/copilot" className="mt-4 orgos-btn orgos-btn--secondary w-full text-xs">
             <span>Query Knowledge</span>
             <ArrowRight className="w-3.5 h-3.5" />
-          </button>
+          </Link>
         </div>
 
         {/* Card 2: Document Vault */}
@@ -172,10 +172,10 @@ export default function DashboardView({ user }: DashboardViewProps) {
               Upload past agendas, permits, and post-mortems for AI indexing.
             </p>
           </div>
-          <button className="mt-4 orgos-btn orgos-btn--secondary w-full text-xs">
+          <Link href="/documents" className="mt-4 orgos-btn orgos-btn--secondary w-full text-xs">
             <span>Upload Documents</span>
             <Upload className="w-3.5 h-3.5" />
-          </button>
+          </Link>
         </div>
 
         {/* Card 3: Events & Attendance */}

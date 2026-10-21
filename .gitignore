@@ -1,6 +1,7 @@
 # Existing documentation rules
 PROJECT_PLAN.md
 IMPLEMENTATION_ROADMAP.md
+AI_PLAN.md
 
 # Environment variables & secrets
 .env

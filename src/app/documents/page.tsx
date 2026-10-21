@@ -638,6 +638,16 @@ export default function DocumentsPage() {
       const updatedDocs = [newDoc, ...documents];
       setDocuments(updatedDocs);
 
+      try {
+        const ingestForm = new FormData();
+        ingestForm.append("documentId", docId);
+        if (verifiedOrgUuid) ingestForm.append("orgId", verifiedOrgUuid);
+        ingestForm.append("title", newDoc.title);
+        ingestForm.append("category", newDoc.category);
+        ingestForm.append("rawText", rawSummary);
+        ingestForm.append("file", uploadFile);
+        fetch("/api/documents/ingest", { method: "POST", body: ingestForm }).catch(() => {});
+      } catch {}
       showToast("success", `"${newDoc.title}" successfully vaulted & indexed.`);
       setIsUploadModalOpen(false);
 
