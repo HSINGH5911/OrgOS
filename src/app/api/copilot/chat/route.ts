@@ -266,7 +266,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         role: "assistant",
         apiKeyMissing: true,
-        content: `### ⚙️ Google Gemini API Key Placeholder Detected
+        content: `### Google Gemini API Key Placeholder Detected
 
 Your AI Copilot pipeline, RBAC permissions (**${userTitle}** — allowed tiers: \`${allowedVisibilities.join(
           ", "
@@ -281,7 +281,7 @@ To activate live **Gemini 2.5 Flash** responses and **pgvector** embeddings:
 3. Restart your dev server (\`npm run dev\`).
 
 ---
-#### 📁 Accessible Vault Documents Found for **${orgName}** (${accessibleDocs.length}):
+#### Accessible Vault Documents Found for **${orgName}** (${accessibleDocs.length}):
 ${vaultList}`,
         citations,
       });

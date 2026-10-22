@@ -22,14 +22,13 @@ import UserDropdown from "@/components/UserDropdown";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 const navigationItems = [
-  { label: "Overview", icon: "📊", href: "/" },
-  { label: "Documents", icon: "📁", href: "/documents" },
-  { label: "Members", icon: "👥", href: "/members" },
-  { label: "Roles", icon: "🛡️", href: "/roles" },
-  { label: "Calendar", icon: "📅", href: "/calendar" },
-  { label: "AI Copilot", icon: "✨", href: "/copilot" },
-  { label: "Transitions", icon: "📋", href: "/transitions" },
-  { label: "Account", icon: "⚙️", href: "/account" },
+  { label: "Overview", href: "/" },
+  { label: "Documents", href: "/documents" },
+  { label: "Members", href: "/members" },
+  { label: "Roles", href: "/roles" },
+  { label: "Calendar", href: "/calendar" },
+  { label: "AI Copilot", href: "/copilot" },
+  { label: "Account", href: "/account" },
 ];
 
 const EVENT_CATEGORIES = [
