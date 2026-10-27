@@ -8,18 +8,16 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 import {
   ArrowLeft,
   Building2,
-  GraduationCap,
   ShieldCheck,
-  Mail,
   Calendar,
   Copy,
   Check,
   LogOut,
   Loader2,
   User,
-  Shield,
-  Sparkles,
+  SunMoon,
 } from "lucide-react";
+import ThemeSelector from "@/components/ThemeSelector";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -83,6 +81,16 @@ export default function AccountPage() {
   if (!user) {
     return (
       <div className="min-h-screen bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] flex flex-col items-center justify-center px-6">
+        <div className="max-w-md w-full flex items-center justify-between mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#1B365D] transition-colors"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Back to Home</span>
+          </Link>
+          <ThemeSelector />
+        </div>
         <div className="max-w-md w-full text-center bg-white border border-slate-200 rounded-sm p-8 shadow-sm">
           <div className="h-10 w-10 rounded-sm bg-[#EBF1F8] border border-[#C8D8E9] text-[#1B365D] flex items-center justify-center mx-auto mb-3">
             <User className="w-5 h-5" />
@@ -152,7 +160,7 @@ export default function AccountPage() {
   return (
     <div className="min-h-screen bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] relative px-6 py-12 selection:bg-[#1B365D] selection:text-white">
       <div className="max-w-2xl mx-auto relative z-10">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#1B365D] transition-colors"
@@ -160,6 +168,7 @@ export default function AccountPage() {
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Back to Home</span>
           </Link>
+          <ThemeSelector />
         </div>
 
         <div className="bg-white border border-slate-200 rounded-sm shadow-sm overflow-hidden">
@@ -208,6 +217,19 @@ export default function AccountPage() {
                     {role}
                   </span>
                 </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-sm bg-slate-50 border border-slate-200 space-y-3">
+              <h2 className="orgos-meta-label text-[#1B365D] flex items-center gap-1.5">
+                <SunMoon className="w-4 h-4" />
+                Appearance &amp; Theme
+              </h2>
+              <p className="text-xs text-slate-600">
+                Select your display theme preference for the OrgOS workspace.
+              </p>
+              <div className="pt-1">
+                <ThemeSelector variant="segmented" />
               </div>
             </div>
 

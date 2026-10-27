@@ -14,6 +14,7 @@ import {
   User,
   Building,
 } from "lucide-react";
+import ThemeSelector from "@/components/ThemeSelector";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -87,8 +88,8 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-[var(--orgos-bg-app)] text-[var(--orgos-text-primary)] relative px-6 py-12 selection:bg-[#1B365D] selection:text-white">
-      {/* Back to Home Link */}
-      <div className="w-full max-w-md mb-4">
+      {/* Top Bar: Back to Home + Theme Selector */}
+      <div className="w-full max-w-md mb-4 flex items-center justify-between">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-[#1B365D] transition-colors"
@@ -96,6 +97,7 @@ export default function SignupPage() {
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Home</span>
         </Link>
+        <ThemeSelector />
       </div>
 
       {/* Card Container */}

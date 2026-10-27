@@ -3,20 +3,19 @@
 import React, { useState } from "react";
 import {
   X,
-  User,
   Mail,
   Building2,
   GraduationCap,
-  Shield,
   ShieldCheck,
   Calendar,
   Copy,
   Check,
   LogOut,
-  ExternalLink,
   IdCard,
+  SunMoon,
 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import ThemeSelector from "./ThemeSelector";
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -245,6 +244,18 @@ export default function AccountModal({
                 </span>
               </div>
             </div>
+          </div>
+
+          {/* Appearance / Theme Preference Card */}
+          <div className="p-4 rounded-sm bg-slate-50 border border-slate-200 space-y-2.5">
+            <span className="orgos-meta-label text-[#1B365D] flex items-center gap-1.5 pb-2 border-b border-slate-200">
+              <SunMoon className="w-3.5 h-3.5" />
+              Workspace Appearance
+            </span>
+            <p className="text-xs text-slate-600">
+              Choose your preferred display theme across all OrgOS views.
+            </p>
+            <ThemeSelector variant="segmented" />
           </div>
         </div>
 

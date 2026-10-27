@@ -1,0 +1,545 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  CalendarDays,
+  CalendarPlus,
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  Plus,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { Sidebar } from "@/components/Sidebar";
+import UserDropdown from "@/components/UserDropdown";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
+
+const navigationItems = [
+  { label: "Overview", href: "/" },
+  { label: "Documents", href: "/documents" },
+  { label: "Members", href: "/members" },
+  { label: "Roles", href: "/roles" },
+  { label: "Calendar", href: "/calendar" },
+  { label: "AI Copilot", href: "/copilot" },
+  { label: "Account", href: "/account" },
+];
+
+type CalendarView = "Month" | "Week";
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  date: Date;
+  time?: string;
+  location?: string;
+  category?: string;
+  description?: string;
+}
+
+const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function parseLocalDate(dateValue: string | Date): Date {
+  if (dateValue instanceof Date) return dateValue;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+    const [year, month, day] = dateValue.split("-").map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(dateValue);
+}
+
+function toDateInputString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+export default function Calendar() {
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [view, setView] = useState<CalendarView>("Month");
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    if (typeof window !== "undefined") {
+      try {
+        const rawEvents = localStorage.getItem("orgos_events");
+        if (rawEvents) {
+          const parsed = JSON.parse(rawEvents);
+          if (Array.isArray(parsed)) {
+            setEvents(
+              parsed.map((item) => ({
+                ...item,
+                date: parseLocalDate(item.date),
+              }))
+            );
+          }
+        }
+      } catch {
+        // Ignore malformed localStorage data
+      }
+    }
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const today = new Date();
+  const startOfToday = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const isSameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const upcomingEvents = events
+    .filter((event) => event.date >= startOfToday)
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  const selectedDateEvents = events.filter((event) =>
+    isSameDay(event.date, selectedDate)
+  );
+
+  const monthLabel = currentDate.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+
+  const selectedDateLabel = selectedDate.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const changeDate = (direction: number) => {
+    if (view === "Month") {
+      const nextDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() + direction,
+        1
+      );
+      setCurrentDate(nextDate);
+    } else {
+      const nextDate = new Date(selectedDate);
+      nextDate.setDate(nextDate.getDate() + direction * 7);
+      setSelectedDate(nextDate);
+      setCurrentDate(nextDate);
+    }
+  };
+
+  const goToToday = () => {
+    const now = new Date();
+    setCurrentDate(now);
+    setSelectedDate(now);
+  };
+
+  const selectDate = (date: Date) => {
+    setSelectedDate(date);
+    setCurrentDate(date);
+  };
+
+  const monthStart = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    1
+  );
+
+  const gridStart = new Date(monthStart);
+  gridStart.setDate(monthStart.getDate() - monthStart.getDay());
+
+  const monthDays = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(gridStart);
+    date.setDate(gridStart.getDate() + index);
+    return date;
+  });
+
+  const weekStart = new Date(selectedDate);
+  weekStart.setDate(selectedDate.getDate() - selectedDate.getDay());
+
+  const weekDates = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
+    return date;
+  });
+
+  const displayedDates = view === "Month" ? monthDays : weekDates;
+
+  const heading =
+    view === "Month"
+      ? monthLabel
+      : `${weekDates[0].toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })} – ${weekDates[6].toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}`;
+
+  const createEventHref = `/event-form?date=${toDateInputString(selectedDate)}`;
+
+  return (
+    <div className="flex min-h-screen bg-slate-50 text-slate-900 selection:bg-[#1B365D] selection:text-white">
+      {user && (
+        <Sidebar
+          items={navigationItems}
+          isCollapsed={isSidebarCollapsed}
+          onToggle={() => setIsSidebarCollapsed((prev) => !prev)}
+          activeHref="/calendar"
+        />
+      )}
+
+      <div
+        className={`flex min-h-screen min-w-0 flex-1 flex-col transition-all duration-300 ${
+          user
+            ? isSidebarCollapsed
+              ? "pl-16"
+              : "pl-64"
+            : "pl-0"
+        }`}
+      >
+        {/* Application header */}
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link
+                href="/"
+                aria-label="OrgOS home"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#1B365D] text-sm font-bold text-white shadow-sm transition hover:bg-[#254775]"
+              >
+                O
+              </Link>
+
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="font-bold tracking-tight text-[#1B365D]">
+                  OrgOS
+                </span>
+                <span className="text-slate-300">/</span>
+                <span className="truncate text-sm font-medium text-slate-600">
+                  Calendar
+                </span>
+              </div>
+            </div>
+
+            <UserDropdown />
+          </div>
+        </header>
+
+        <main className="mx-auto flex w-full min-w-0 max-w-[1800px] flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          {/* Page heading */}
+          <section className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+                Calendar
+              </h1>
+            </div>
+
+            <Link
+              href={createEventHref}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#1B365D] px-4 text-sm font-medium text-white shadow-sm transition hover:bg-[#254775] focus:outline-none focus:ring-2 focus:ring-[#1B365D] focus:ring-offset-2"
+            >
+              <Plus size={17} />
+              Create event
+            </Link>
+          </section>
+
+          {/* Calendar workspace */}
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            {/* Calendar toolbar */}
+            <div className="flex flex-col gap-4 border-b border-slate-200 px-4 py-4 sm:px-6">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-[#1B365D] sm:flex">
+                    <CalendarDays size={22} />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h2 className="text-xl font-semibold tracking-tight text-slate-900">
+                      {heading}
+                    </h2>
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      {view === "Month" ? "Monthly overview" : "Weekly schedule"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={goToToday}
+                    className="h-9 rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Today
+                  </button>
+
+                  <div className="flex items-center rounded-lg border border-slate-200">
+                    <button
+                      type="button"
+                      aria-label="Previous period"
+                      onClick={() => changeDate(-1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-l-lg text-slate-600 transition hover:bg-slate-100"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+
+                    <div className="h-5 w-px bg-slate-200" />
+
+                    <button
+                      type="button"
+                      aria-label="Next period"
+                      onClick={() => changeDate(1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-r-lg text-slate-600 transition hover:bg-slate-100"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* View selector */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+                  {(["Month", "Week"] as CalendarView[]).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setView(option)}
+                      aria-pressed={view === option}
+                      className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+                        view === option
+                          ? "bg-white text-[#1B365D] shadow-sm ring-1 ring-slate-200"
+                          : "text-slate-500 hover:text-slate-800"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="h-2 w-2 rounded-full bg-[#1B365D]" />
+                  Today
+                  <span className="ml-2 h-2 w-2 rounded-full border border-slate-300 bg-white" />
+                  Selected date
+                </div>
+              </div>
+            </div>
+
+            {/* Weekday labels */}
+            <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50/80">
+              {weekDays.map((day) => (
+                <div
+                  key={day}
+                  className="py-3 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:text-xs"
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar grid */}
+            <div className="grid grid-cols-7">
+              {displayedDates.map((date) => {
+                const isCurrentMonth =
+                  date.getMonth() === currentDate.getMonth() &&
+                  date.getFullYear() === currentDate.getFullYear();
+
+                const isSelected = isSameDay(date, selectedDate);
+                const isCurrentDay = isSameDay(date, today);
+                const dayEvents = events.filter((event) =>
+                  isSameDay(event.date, date)
+                );
+
+                return (
+                  <button
+                    key={`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`}
+                    type="button"
+                    onClick={() => selectDate(date)}
+                    aria-pressed={isSelected}
+                    className={`group relative flex min-w-0 flex-col justify-start border-b border-r border-slate-200 p-1.5 text-left transition-colors focus:z-10 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#1B365D] sm:p-2.5 ${
+                      view === "Month"
+                        ? "min-h-[88px] sm:min-h-[118px] lg:min-h-[140px]"
+                        : "min-h-[180px] sm:min-h-[250px]"
+                    } ${
+                      isSelected
+                        ? "bg-blue-50/60"
+                        : "bg-white hover:bg-slate-50"
+                    } ${
+                      view === "Month" && !isCurrentMonth
+                        ? "bg-slate-50/70"
+                        : ""
+                    }`}
+                  >
+                    <div className="flex justify-start">
+                      <span
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-medium transition sm:h-8 sm:w-8 sm:text-sm ${
+                          isCurrentDay
+                            ? "bg-[#1B365D] font-semibold text-white"
+                            : isSelected
+                              ? "bg-blue-100 font-semibold text-[#1B365D]"
+                              : view === "Month" && !isCurrentMonth
+                                ? "text-slate-400"
+                                : "text-slate-700 group-hover:bg-slate-100"
+                        }`}
+                      >
+                        {date.getDate()}
+                      </span>
+                    </div>
+
+                    <div className="mt-2 space-y-1">
+                      {dayEvents.slice(0, 2).map((event) => (
+                        <div
+                          key={event.id}
+                          className="truncate rounded bg-[#1B365D]/10 px-1.5 py-0.5 text-[11px] font-medium text-[#1B365D]"
+                        >
+                          {event.title}
+                        </div>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="text-[10px] font-medium text-slate-500">
+                          +{dayEvents.length - 2} more
+                        </div>
+                      )}
+                    </div>
+
+                    {view === "Month" && isSelected && dayEvents.length === 0 && (
+                      <div className="mt-1 hidden text-[10px] font-medium text-[#1B365D] sm:block">
+                        Selected
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Calendar footer */}
+            <div className="flex flex-col gap-3 border-t border-slate-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                  <Clock3 size={17} />
+                </div>
+
+                <div>
+                  <p className="text-sm font-semibold text-slate-800">
+                    {selectedDateLabel}
+                  </p>
+                  {selectedDateEvents.length === 0 ? (
+                    <p className="mt-0.5 text-sm text-slate-500">
+                      No events to display for this date.
+                    </p>
+                  ) : (
+                    <div className="mt-1 space-y-1">
+                      {selectedDateEvents.map((event) => (
+                        <p key={event.id} className="text-xs text-slate-600">
+                          <span className="font-medium text-slate-900">
+                            {event.title}
+                          </span>
+                          {event.time ? ` • ${event.time}` : ""}
+                          {event.location ? ` • ${event.location}` : ""}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Link
+                href={createEventHref}
+                className="inline-flex h-9 items-center justify-center gap-2 self-start rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:self-auto"
+              >
+                <CalendarPlus size={16} />
+                Add event
+              </Link>
+            </div>
+          </section>
+
+          <p className="text-xs leading-relaxed text-slate-400">
+            Select a date to view its schedule. Events will appear here once
+            calendar data is connected.
+          </p>
+
+          {/* Upcoming Events section */}
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-4 sm:px-6">
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-slate-900">
+                  Upcoming Events
+                </h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Scheduled chapter meetings and activities
+                </p>
+              </div>
+              {upcomingEvents.length > 0 && (
+                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                  {upcomingEvents.length}
+                </span>
+              )}
+            </div>
+
+            {upcomingEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center px-4 py-10 text-center sm:px-6">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-400">
+                  <CalendarDays size={20} />
+                </div>
+                <p className="text-sm font-medium text-slate-800">
+                  No upcoming events are scheduled.
+                </p>
+                <p className="mt-1 max-w-sm text-xs text-slate-500">
+                  When new chapter events or meetings are created, they will appear here.
+                </p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-200">
+                {upcomingEvents.map((event) => (
+                  <li
+                    key={event.id}
+                    className="flex flex-col justify-between gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:px-6"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-slate-900">
+                        {event.title}
+                      </p>
+                      {event.location && (
+                        <p className="mt-0.5 text-xs text-slate-500">
+                          {event.location}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-xs font-medium text-slate-600">
+                      {event.date.toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                      {event.time ? ` • ${event.time}` : ""}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </main>
+      </div>
+    </div>
+  );
+}

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -24,11 +25,13 @@ const config: Config = {
           },
           warning: {
             DEFAULT: "var(--orgos-warning)",
+            hover: "var(--orgos-warning-hover)",
             bg: "var(--orgos-warning-bg)",
             border: "var(--orgos-warning-border)",
           },
           danger: {
             DEFAULT: "var(--orgos-danger)",
+            hover: "var(--orgos-danger-hover)",
             bg: "var(--orgos-danger-bg)",
             border: "var(--orgos-danger-border)",
           },
@@ -36,10 +39,13 @@ const config: Config = {
             app: "var(--orgos-bg-app)",
             surface: "var(--orgos-bg-surface)",
             dim: "var(--orgos-bg-surface-dim)",
+            elevated: "var(--orgos-bg-surface-elevated)",
             sidebar: "var(--orgos-bg-sidebar)",
             "sidebar-active": "var(--orgos-bg-sidebar-active)",
+            "sidebar-hover": "var(--orgos-bg-sidebar-hover)",
           },
           border: {
+            subtle: "var(--orgos-border-subtle)",
             light: "var(--orgos-border-light)",
             medium: "var(--orgos-border-medium)",
             dark: "var(--orgos-border-dark)",
@@ -50,6 +56,7 @@ const config: Config = {
             tertiary: "var(--orgos-text-tertiary)",
             inverse: "var(--orgos-text-inverse)",
             sidebar: "var(--orgos-text-sidebar)",
+            "sidebar-muted": "var(--orgos-text-sidebar-muted)",
           },
         },
       },
@@ -58,8 +65,15 @@ const config: Config = {
         mono: ["var(--orgos-font-mono)"],
       },
       borderRadius: {
+        xs: "var(--orgos-radius-xs)",
         sm: "var(--orgos-radius-sm)",
         md: "var(--orgos-radius-md)",
+        full: "var(--orgos-radius-full)",
+      },
+      boxShadow: {
+        xs: "var(--orgos-shadow-xs)",
+        sm: "var(--orgos-shadow-sm)",
+        md: "var(--orgos-shadow-md)",
       },
     },
   },
