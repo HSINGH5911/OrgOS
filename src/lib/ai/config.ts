@@ -12,7 +12,8 @@ export const google = createGoogleGenerativeAI({
 });
 
 // Fast, free-tier chat model with 1M context window & tool calling
-export const copilotChatModel = google("gemini-2.5-flash");
+export const copilotChatModel = google("gemini-3.8-flash");
+export const copilotFallbackChatModel = google("gemini-3.6-flash");
 
 // Free-tier 768-dimension embedding model
 export const copilotEmbeddingModel = google.textEmbeddingModel(

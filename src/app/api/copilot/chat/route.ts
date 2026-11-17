@@ -3,6 +3,7 @@ import { embed, generateText } from "ai";
 import { createClient } from "@/lib/supabase/server";
 import {
   copilotChatModel,
+  copilotFallbackChatModel,
   copilotEmbeddingModel,
   isGeminiApiKeyConfigured,
 } from "@/lib/ai/config";
@@ -310,15 +311,41 @@ ${rosterSummary || "No roster records found."}
 === UPCOMING CHAPTER CALENDAR EVENTS ===
 ${eventsContext}`;
 
-    const result = await generateText({
-      model: copilotChatModel,
-      system: systemPrompt,
-      messages: messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      })),
-      temperature: 0.3,
-    });
+    const formattedMessages = messages.map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+
+    let result;
+    try {
+      result = await generateText({
+        model: copilotChatModel,
+        system: systemPrompt,
+        messages: formattedMessages,
+        temperature: 0.3,
+        maxRetries: 0,
+      });
+    } catch (primaryErr: any) {
+      const statusCode =
+        primaryErr?.statusCode ?? primaryErr?.lastError?.statusCode;
+      const isUnavailable =
+        statusCode === 503 ||
+        /high demand|unavailable|503/i.test(String(primaryErr?.message || ""));
+
+      if (!isUnavailable) {
+        throw primaryErr;
+      }
+
+      console.warn(
+        "gemini-3.8-flash returned 503/unavailable, falling back to gemini-3.6-flash"
+      );
+      result = await generateText({
+        model: copilotFallbackChatModel,
+        system: systemPrompt,
+        messages: formattedMessages,
+        temperature: 0.3,
+      });
+    }
 
     return NextResponse.json({
       role: "assistant",
