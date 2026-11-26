@@ -132,10 +132,15 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Batch generate 768-dim embeddings using Gemini text-embedding-004
+    // Batch generate 768-dim embeddings using Gemini gemini-embedding-001
     const { embeddings } = await embedMany({
       model: copilotEmbeddingModel,
       values: chunks.map((c) => c.content),
+      providerOptions: {
+        google: {
+          outputDimensionality: 768,
+        },
+      },
     });
 
     // Clear old chunks for this document if re-indexing

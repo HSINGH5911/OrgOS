@@ -646,19 +646,6 @@ export default function CopilotPage() {
                     <h1 className="orgos-title-h1 mb-0">
                       AI Institutional Copilot
                     </h1>
-                    <span className="orgos-badge orgos-badge--primary">
-                      Phase 3 RAG Engine
-                    </span>
-                    <span className="orgos-badge orgos-badge--success">
-                      <span className="orgos-badge-dot" />
-                      pgvector Grounded
-                    </span>
-                    {isPresident && (
-                      <span className="orgos-badge orgos-badge--warning">
-                        <Shield className="w-3 h-3" />
-                        <span>Full Vault Clearance</span>
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-[var(--orgos-text-secondary)] mt-1 max-w-2xl">
                     Query historical event budgets, venue reservation timelines,
@@ -722,65 +709,9 @@ export default function CopilotPage() {
                   {/* Conversation Area */}
                   <div className="p-5 min-h-[420px] max-h-[580px] overflow-y-auto space-y-5">
                     {messages.length === 0 ? (
-                      <div className="space-y-6 py-2">
-                        {/* Intro Callout */}
-                        <div className="orgos-grounding-box">
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#0B7C44]">
-                              Institutional Memory Ready
-                            </span>
-                            <span className="text-[11px] text-slate-600">
-                              Visibility: {allowedVisibilities.join(", ")}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-800 leading-relaxed font-sans">
-                            Select a starter prompt below or ask any question
-                            about <strong>{orgName}</strong>&apos;s uploaded
-                            documents, event budgets, officer roles, or
-                            handover procedures.
-                          </p>
-                        </div>
-
+                      <div className="space-y-6 py-2">                                    
                         {/* Quick Prompt Cards Grid */}
-                        <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="orgos-meta-label">
-                              Quick Officer Prompts
-                            </span>
-                            <span className="text-[11px] text-slate-400">
-                              Click to run query
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {QUICK_PROMPTS.map((item, idx) => {
-                              const IconComp = item.icon;
-                              return (
-                                <button
-                                  key={idx}
-                                  type="button"
-                                  onClick={() => handleSendMessage(item.prompt)}
-                                  className="text-left p-4 rounded-sm bg-slate-50 hover:bg-white border border-slate-200 hover:border-[#1B365D] transition-all group flex flex-col justify-between shadow-xs"
-                                >
-                                  <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="orgos-badge orgos-badge--primary">
-                                        <IconComp className="w-3 h-3" />
-                                        {item.category}
-                                      </span>
-                                      <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-[#1B365D]" />
-                                    </div>
-                                    <h3 className="font-bold text-xs text-slate-900 mb-1">
-                                      {item.title}
-                                    </h3>
-                                    <p className="text-xs text-slate-600 leading-relaxed">
-                                      &ldquo;{item.prompt}&rdquo;
-                                    </p>
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        
                       </div>
                     ) : (
                       <div className="space-y-4">

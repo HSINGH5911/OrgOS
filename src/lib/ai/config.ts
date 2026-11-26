@@ -1,6 +1,12 @@
+import dns from "node:dns";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-const PLACEHOLDER_KEY = "YOUR_GOOGLE_GEMINI_API_KEY_HERE";
+// Prevent Node.js from stalling on IPv6 resolution for Google APIs on Windows
+try {
+  dns.setDefaultResultOrder("ipv4first");
+} catch {}
+
+const PLACEHOLDER_KEY = "YOUR_GOOGLE_API_KEY_HERE";
 
 export function isGeminiApiKeyConfigured(): boolean {
   const key = process.env.GOOGLE_GENERATIVE_AI_API_KEY?.trim();
@@ -11,10 +17,12 @@ export const google = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || PLACEHOLDER_KEY,
 });
 
-// Fast, free-tier chat model with 1M context window & tool calling
-export const copilotChatModel = google("gemini-2.5-flash");
+// Primary: Gemini Flash-Lite Latest, Secondary: Gemini 3.5 Flash-Lite, Tertiary: Gemini 3 Flash Preview
+export const copilotChatModel = google("gemini-flash-lite-latest");
+export const copilotFallbackChatModel = google("gemini-3.5-flash-lite");
+export const copilotTertiaryChatModel = google("gemini-3-flash-preview");
 
-// Free-tier 768-dimension embedding model
+// Active 768-dimension embedding model
 export const copilotEmbeddingModel = google.textEmbeddingModel(
-  "text-embedding-004"
+  "gemini-embedding-001"
 );
