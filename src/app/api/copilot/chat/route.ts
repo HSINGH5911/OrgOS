@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { embed, generateText } from "ai";
 import { createClient } from "@/lib/supabase/server";
+
+export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 import {
   copilotChatModel,
   copilotFallbackChatModel,
+  copilotTertiaryChatModel,
   copilotEmbeddingModel,
   isGeminiApiKeyConfigured,
 } from "@/lib/ai/config";
@@ -27,11 +31,25 @@ interface ChatMessageInput {
 }
 
 export async function POST(req: NextRequest) {
+  const reqStart = Date.now();
   try {
+    console.log(`[Copilot] ── Incoming chat request starting...`);
+
+    const tAuth = Date.now();
     const supabase = await createClient();
     const {
       data: { user },
+      error: authErr,
     } = await supabase.auth.getUser();
+
+    console.log(
+      `[Copilot] ✓ Auth check in ${Date.now() - tAuth}ms (User: ${
+        user?.email || "unauthorized"
+      })`
+    );
+    if (authErr) {
+      console.warn(`[Copilot] ⚠️ Auth warning:`, authErr.message);
+    }
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -55,7 +73,8 @@ export async function POST(req: NextRequest) {
     }
 
     // 1. Resolve User's Organization & Role
-    const { data: membership } = await supabase
+    const tMember = Date.now();
+    const { data: membership, error: memErr } = await supabase
       .from("org_memberships")
       .select(
         `
@@ -73,6 +92,15 @@ export async function POST(req: NextRequest) {
       .eq("user_id", user.id)
       .eq("is_active", true)
       .maybeSingle();
+
+    console.log(
+      `[Copilot] ✓ 1. Membership resolved in ${Date.now() - tMember}ms (Role: ${
+        membership?.role || "default"
+      }, Org: ${membership?.org_id || "none"})`
+    );
+    if (memErr) {
+      console.warn(`[Copilot] ⚠️ Membership warning:`, memErr.message);
+    }
 
     const rawOrg = membership?.organizations
       ? Array.isArray(membership.organizations)
@@ -101,7 +129,8 @@ export async function POST(req: NextRequest) {
 
     const allowedVisibilities = getAllowedVisibilitiesForRole(userRole);
 
-    // 2. Fetch Accessible Vault Documents (for metadata context & hybrid fallback)
+    // 2 & 3. Parallel Fetch: Accessible Vault Documents + Active Organization Roster
+    const tDocsStart = Date.now();
     let docQuery = supabase
       .from("documents")
       .select("id, title, category, summary, created_at, uploader_name")
@@ -111,42 +140,52 @@ export async function POST(req: NextRequest) {
       docQuery = docQuery.eq("org_id", orgId);
     }
 
-    const { data: allOrgDocs } = await docQuery;
+    const rosterQuery = orgId
+      ? supabase
+          .from("org_memberships")
+          .select(
+            `
+            role,
+            title,
+            profiles (
+              full_name,
+              email
+            )
+          `
+          )
+          .eq("org_id", orgId)
+          .eq("is_active", true)
+          .limit(30)
+      : Promise.resolve({ data: [] });
+
+    const [{ data: allOrgDocs }, { data: rosterRows }] = await Promise.all([
+      docQuery,
+      rosterQuery,
+    ]);
+
+    console.log(
+      `[Copilot] ✓ 2. Documents & Roster fetched in ${
+        Date.now() - tDocsStart
+      }ms (Docs: ${allOrgDocs?.length || 0}, Roster: ${
+        rosterRows?.length || 0
+      })`
+    );
 
     const accessibleDocs = (allOrgDocs || []).filter((doc: any) => {
       const vis = parseDocumentVisibility(doc.summary, doc.visibility);
       return allowedVisibilities.includes(vis);
     });
 
-    // 3. Fetch Active Organization Roster for live leadership context
     let rosterSummary = "";
-    if (orgId) {
-      const { data: rosterRows } = await supabase
-        .from("org_memberships")
-        .select(
-          `
-          role,
-          title,
-          profiles (
-            full_name,
-            email
-          )
-        `
-        )
-        .eq("org_id", orgId)
-        .eq("is_active", true)
-        .limit(30);
-
-      if (rosterRows && rosterRows.length > 0) {
-        rosterSummary = rosterRows
-          .map((r: any) => {
-            const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
-            return `- ${p?.full_name || "Member"} (${r.title || r.role}, ${
-              p?.email || "no email"
-            })`;
-          })
-          .join("\n");
-      }
+    if (rosterRows && rosterRows.length > 0) {
+      rosterSummary = rosterRows
+        .map((r: any) => {
+          const p = Array.isArray(r.profiles) ? r.profiles[0] : r.profiles;
+          return `- ${p?.full_name || "Member"} (${r.title || r.role}, ${
+            p?.email || "no email"
+          })`;
+        })
+        .join("\n");
     }
 
     // 4. Retrieve Relevant Document Chunks (Vector Search + Keyword Fallback)
@@ -155,11 +194,23 @@ export async function POST(req: NextRequest) {
 
     if (isGeminiApiKeyConfigured()) {
       try {
+        const tEmbed = Date.now();
+        console.log(`[Copilot] ⏳ 3. Generating embedding with gemini-embedding-001...`);
         const { embedding } = await embed({
           model: copilotEmbeddingModel,
           value: lastUserMessage,
+          abortSignal: AbortSignal.timeout(10000),
+          providerOptions: {
+            google: {
+              outputDimensionality: 768,
+            },
+          },
         });
+        console.log(
+          `[Copilot] ✓ 3. Embedding generated in ${Date.now() - tEmbed}ms`
+        );
 
+        const tRpc = Date.now();
         const { data: vectorMatches, error: rpcError } = await supabase.rpc(
           "match_org_document_chunks",
           {
@@ -170,6 +221,14 @@ export async function POST(req: NextRequest) {
             match_count: 6,
           }
         );
+        console.log(
+          `[Copilot] ✓ 4. Supabase RPC vector search completed in ${
+            Date.now() - tRpc
+          }ms (Matches: ${vectorMatches?.length || 0})`
+        );
+        if (rpcError) {
+          console.warn(`[Copilot] ⚠️ Supabase RPC warning:`, rpcError.message);
+        }
 
         if (!rpcError && Array.isArray(vectorMatches) && vectorMatches.length > 0) {
           for (const match of vectorMatches) {
@@ -317,6 +376,34 @@ ${eventsContext}`;
     }));
 
     let result;
+    const isRetryableError = (err: any) => {
+      const statusCode = err?.statusCode ?? err?.lastError?.statusCode;
+      const msg = String(err?.message || "").toLowerCase();
+      const isTimeout =
+        err?.name === "AbortError" || /timeout|timed out|abort/i.test(msg);
+      return (
+        isTimeout ||
+        statusCode === 503 ||
+        statusCode === 429 ||
+        statusCode === 500 ||
+        statusCode === 504 ||
+        statusCode === 408 ||
+        /high demand|unavailable|overloaded|resource exhausted|503|429|timeout/i.test(
+          msg
+        )
+      );
+    };
+
+    const fastOptions = {
+      google: {
+        thinkingConfig: {
+          thinkingLevel: "low" as const,
+        },
+      },
+    };
+
+    const tGen = Date.now();
+    console.log(`[Copilot] ⏳ 5. Calling Primary LLM (gemini-flash-lite-latest)...`);
     try {
       result = await generateText({
         model: copilotChatModel,
@@ -324,27 +411,75 @@ ${eventsContext}`;
         messages: formattedMessages,
         temperature: 0.3,
         maxRetries: 0,
+        abortSignal: AbortSignal.timeout(45000),
+        providerOptions: fastOptions,
       });
+      console.log(
+        `[Copilot] ✓ 5. Primary LLM (gemini-flash-lite-latest) succeeded in ${
+          Date.now() - tGen
+        }ms (Total request: ${Date.now() - reqStart}ms)`
+      );
     } catch (primaryErr: any) {
-      const statusCode =
-        primaryErr?.statusCode ?? primaryErr?.lastError?.statusCode;
-      const isUnavailable =
-        statusCode === 503 ||
-        /high demand|unavailable|503/i.test(String(primaryErr?.message || ""));
-
-      if (!isUnavailable) {
+      console.warn(
+        `[Copilot] ⚠️ Primary LLM (gemini-flash-lite-latest) failed in ${
+          Date.now() - tGen
+        }ms:`,
+        primaryErr?.message || primaryErr
+      );
+      if (!isRetryableError(primaryErr)) {
         throw primaryErr;
       }
 
       console.warn(
-        "gemini-3.8-flash returned 503/unavailable, falling back to gemini-3.6-flash"
+        `[Copilot] ⏳ Falling back to Secondary LLM (gemini-3.5-flash-lite)...`
       );
-      result = await generateText({
-        model: copilotFallbackChatModel,
-        system: systemPrompt,
-        messages: formattedMessages,
-        temperature: 0.3,
-      });
+
+      const tFallback1 = Date.now();
+      try {
+        result = await generateText({
+          model: copilotFallbackChatModel,
+          system: systemPrompt,
+          messages: formattedMessages,
+          temperature: 0.3,
+          maxRetries: 0,
+          abortSignal: AbortSignal.timeout(45000),
+          providerOptions: fastOptions,
+        });
+        console.log(
+          `[Copilot] ✓ Secondary LLM (gemini-3.5-flash-lite) succeeded in ${
+            Date.now() - tFallback1
+          }ms (Total request: ${Date.now() - reqStart}ms)`
+        );
+      } catch (secondaryErr: any) {
+        console.warn(
+          `[Copilot] ⚠️ Secondary LLM (gemini-3.5-flash-lite) failed in ${
+            Date.now() - tFallback1
+          }ms:`,
+          secondaryErr?.message || secondaryErr
+        );
+        if (!isRetryableError(secondaryErr)) {
+          throw secondaryErr;
+        }
+
+        console.warn(
+          `[Copilot] ⏳ Falling back to Tertiary LLM (gemini-3-flash-preview)...`
+        );
+
+        const tFallback2 = Date.now();
+        result = await generateText({
+          model: copilotTertiaryChatModel,
+          system: systemPrompt,
+          messages: formattedMessages,
+          temperature: 0.3,
+          abortSignal: AbortSignal.timeout(45000),
+          providerOptions: fastOptions,
+        });
+        console.log(
+          `[Copilot] ✓ Tertiary LLM (gemini-3-flash-preview) succeeded in ${
+            Date.now() - tFallback2
+          }ms (Total request: ${Date.now() - reqStart}ms)`
+        );
+      }
     }
 
     return NextResponse.json({
@@ -353,7 +488,10 @@ ${eventsContext}`;
       citations,
     });
   } catch (err: any) {
-    console.error("Copilot chat error:", err);
+    console.error(
+      `[Copilot] ❌ Copilot chat failed after ${Date.now() - reqStart}ms:`,
+      err
+    );
     return NextResponse.json(
       {
         error:
